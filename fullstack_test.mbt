@@ -75,7 +75,7 @@ fn build_todo_app() -> @crescent.App {
     { id: 1, title: "Learn MoonBit", done: true },
     { id: 2, title: "Build web app", done: false },
   ]
-  let next_id = Ref::new(3)
+  let next_id = Ref(3)
 
   // List todos
   app.get_raw("/api/todos", _ => @crescent.HttpResponse::ok().json_value(todos))

@@ -29,7 +29,11 @@ test "HttpRequest::json parses struct from body" {
 ///|
 test "HttpRequest::json fails on invalid json" {
   let req = @crescent.HttpRequest(Post, "/users", {}, raw_body=b"not json")
-  let result : Result[TestUser, _] = try? req.json()
+  let result : Result[TestUser, _] = try req.json() catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(result is Err(_))
 }
 
@@ -41,7 +45,11 @@ test "HttpRequest::json fails on missing fields" {
     {},
     raw_body=b"{\"name\":\"Alice\"}",
   )
-  let result : Result[TestUser, _] = try? req.json()
+  let result : Result[TestUser, _] = try req.json() catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(result is Err(_))
 }
 
@@ -53,7 +61,11 @@ test "HttpRequest::json fails on wrong field type" {
     {},
     raw_body=b"{\"name\":\"Alice\",\"age\":\"thirty\"}",
   )
-  let result : Result[TestUser, _] = try? req.json()
+  let result : Result[TestUser, _] = try req.json() catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(result is Err(_))
 }
 
@@ -73,7 +85,11 @@ test "HttpRequest::json parses nested struct" {
 ///|
 test "HttpRequest::json parses empty body as error" {
   let req = @crescent.HttpRequest(Post, "/", {}, raw_body=b"")
-  let result : Result[TestUser, _] = try? req.json()
+  let result : Result[TestUser, _] = try req.json() catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(result is Err(_))
 }
 

@@ -18,7 +18,7 @@ test "re-export: HttpResponse::ok()" {
 ///|
 test "re-export: html() helper" {
   let responder = @crescent.html("<p>hi</p>")
-  let buf = @buffer.new()
+  let buf = Buffer()
   responder.output(buf)
   assert_eq(buf.contents(), @utf8.encode("<p>hi</p>"))
 }
@@ -26,7 +26,7 @@ test "re-export: html() helper" {
 ///|
 test "re-export: text() helper" {
   let responder = @crescent.text("hello")
-  let buf = @buffer.new()
+  let buf = Buffer()
   responder.output(buf)
   assert_eq(buf.contents(), @utf8.encode("hello"))
 }

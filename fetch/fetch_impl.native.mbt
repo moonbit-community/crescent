@@ -80,7 +80,7 @@ fn resolve_fetch_url(
   // HTTP Host header and URL reconstruction.
   let host = match authority.host {
     IPv6Address(addr) => "[\{addr}]"
-    RegName(name) => name.to_string()
+    RegName(name) => name.to_owned()
   }
   guard host != "" && host != "[]" else {
     raise FetchError::RequestFailed("invalid URL: \{url} (empty host)")
@@ -98,7 +98,7 @@ fn resolve_fetch_url(
   }
 
   // Reconstruct the request path from segments and query.
-  let path_buf = StringBuilder::new()
+  let path_buf = StringBuilder()
   for seg in parsed.path {
     path_buf.write_string("/")
     path_buf.write_view(seg)
@@ -108,7 +108,7 @@ fn resolve_fetch_url(
     path_str = "/"
   }
   match parsed.query {
-    Some(q) => path_str = path_str + "?" + q.to_string()
+    Some(q) => path_str = path_str + "?" + q.to_owned()
     None => ()
   }
   (protocol, host, port, path_str)
@@ -165,19 +165,31 @@ test "resolve_fetch_url IPv6 literal" {
 
 ///|
 test "resolve_fetch_url rejects unsupported scheme" {
-  let res = try? resolve_fetch_url("ftp://example.com/foo")
+  let res = try resolve_fetch_url("ftp://example.com/foo") catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(res is Err(_))
 }
 
 ///|
 test "resolve_fetch_url rejects invalid URL" {
-  let res = try? resolve_fetch_url("not a url")
+  let res = try resolve_fetch_url("not a url") catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(res is Err(_))
 }
 
 ///|
 test "resolve_fetch_url rejects empty host" {
-  let res = try? resolve_fetch_url("http:///foo")
+  let res = try resolve_fetch_url("http:///foo") catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(res is Err(_))
 }
 
@@ -193,7 +205,11 @@ test "resolve_fetch_url handles empty path with query" {
 
 ///|
 test "resolve_fetch_url rejects userinfo" {
-  let res = try? resolve_fetch_url("http://user:pass@example.com/api")
+  let res = try resolve_fetch_url("http://user:pass@example.com/api") catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match res {
     Err(FetchError::RequestFailed(msg)) => assert_true(msg.contains("userinfo"))
     _ => fail("expected FetchError for URL with userinfo")
@@ -202,7 +218,11 @@ test "resolve_fetch_url rejects userinfo" {
 
 ///|
 test "resolve_fetch_url rejects ftp" {
-  let res = try? resolve_fetch_url("ftp://example.com/")
+  let res = try resolve_fetch_url("ftp://example.com/") catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match res {
     Err(FetchError::RequestFailed(msg)) =>
       assert_true(msg.contains("unsupported protocol"))
@@ -241,7 +261,7 @@ fn prepare_fetch_payload_bytes(
           match responder_data.output_bytes() {
             Some(bytes) => Some(bytes)
             None => {
-              let body_buf = @buffer.new()
+              let body_buf = Buffer()
               responder_data.output(body_buf)
               Some(body_buf.to_bytes())
             }
@@ -268,7 +288,7 @@ pub async fn fetch(
   ignore(mode)
   let (req_body, req_headers) = prepare_fetch_payload_bytes(body, data, headers)
   let (protocol, host, port, path) = resolve_fetch_url(url)
-  let client = @http.Client::new(fetch_origin(protocol, host, port)) catch {
+  let client = @http.Client(fetch_origin(protocol, host, port)) catch {
     err => raise FetchError::RequestFailed("\{err}")
   }
   defer client.close()

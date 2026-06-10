@@ -48,8 +48,11 @@ test "require_param raises HttpError when missing" {
     res: HttpResponse(status_code=OK),
     params: {},
   }
-  let result = try? event.require_param("id")
-  assert_true(result is Err(_))
+  try event.require_param("id") catch {
+    err => assert_true(err is @crescent.HttpError(_, _))
+  } noraise {
+    v => fail("Found param where none was expected \{v}")
+  }
 }
 
 ///|
@@ -70,8 +73,11 @@ test "require_param_int raises on missing param" {
     res: HttpResponse(status_code=OK),
     params: {},
   }
-  let result = try? event.require_param_int("id")
-  assert_true(result is Err(_))
+  try event.require_param_int("id") catch {
+    err => assert_true(err is @crescent.HttpError(_, _))
+  } noraise {
+    v => fail("Found param where none was expected \{v}")
+  }
 }
 
 ///|
@@ -81,8 +87,11 @@ test "require_param_int raises on non-integer value" {
     res: HttpResponse(status_code=OK),
     params: { "id": "abc" },
   }
-  let result = try? event.require_param_int("id")
-  assert_true(result is Err(_))
+  try event.require_param_int("id") catch {
+    err => assert_true(err is @crescent.HttpError(_, _))
+  } noraise {
+    v => fail("Found non int param in id \{v}")
+  }
 }
 
 ///|
@@ -103,8 +112,11 @@ test "require_param_int64 raises on non-integer" {
     res: HttpResponse(status_code=OK),
     params: { "id": "not-a-number" },
   }
-  let result = try? event.require_param_int64("id")
-  assert_true(result is Err(_))
+  try event.require_param_int64("id") catch {
+    err => assert_true(err is @crescent.HttpError(_, _))
+  } noraise {
+    v => fail("Found param where none was expected \{v}")
+  }
 }
 
 ///|

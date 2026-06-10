@@ -15,10 +15,13 @@ async fn allocate_test_server() -> @http.Server {
   let addr = @socket.Addr::parse("127.0.0.1:0") catch {
     _ => raise SocketBindUnavailable
   }
-  let bind_check : Result[@http.Server, Error] = try? @http.Server::new(
-    addr,
-    reuse_addr=true,
-  )
+  let bind_check : Result[@http.Server, Error] = try
+    @http.Server(addr, reuse_addr=true)
+  catch {
+    err => Err(err)
+  } noraise {
+    server => Ok(server)
+  }
   match bind_check {
     Ok(server) => server
     Err(@os_error.OSError(errno, ..)) if errno == 1 =>
@@ -173,47 +176,96 @@ async fn with_port_bound_test_server(
   let start_offset = @async.now().to_int() % 20_000
   for attempt = 0; attempt < 2_048; attempt = attempt + 1 {
     let port = 40_000 + (start_offset + attempt) % 20_000
-    let attempt_result : Result[Bool, Error] = try? @async.with_task_group(group => {
-      let task = group.spawn(no_wait=true, allow_failure=true, () => {
-        app.serve(port~)
+    let attempt_result : Result[Bool, Error] = try
+      @async.with_task_group(group => {
+        let task = group.spawn(no_wait=true, allow_failure=true, () => {
+          app.serve(port~)
+        })
+        match
+          @async.with_timeout_opt(50, () => {
+            try task.wait() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
+          }) {
+          Some(Ok(_)) => {
+            task.cancel()
+            ignore(
+              try task.wait() catch {
+                err => Err(err)
+              } noraise {
+                v => Ok(v)
+              },
+            )
+            raise ServerNotReady
+          }
+          Some(Err(@os_error.OSError(errno, ..))) if errno == 1 => {
+            task.cancel()
+            ignore(
+              try task.wait() catch {
+                err => Err(err)
+              } noraise {
+                v => Ok(v)
+              },
+            )
+            raise SocketBindUnavailable
+          }
+          Some(Err(@os_error.OSError(_) as err)) if err.is_EACCES() => {
+            task.cancel()
+            ignore(
+              try task.wait() catch {
+                err => Err(err)
+              } noraise {
+                v => Ok(v)
+              },
+            )
+            raise SocketBindUnavailable
+          }
+          Some(Err(@os_error.OSError(errno, ..))) if errno == 48 ||
+            errno == 98 ||
+            errno == 10048 => {
+            task.cancel()
+            ignore(
+              try task.wait() catch {
+                err => Err(err)
+              } noraise {
+                v => Ok(v)
+              },
+            )
+            false
+          }
+          Some(Err(err)) => {
+            task.cancel()
+            ignore(
+              try task.wait() catch {
+                err => Err(err)
+              } noraise {
+                v => Ok(v)
+              },
+            )
+            raise err
+          }
+          None => {
+            wait_until_ready(port)
+            run_test(port)
+            task.cancel()
+            ignore(
+              try task.wait() catch {
+                err => Err(err)
+              } noraise {
+                v => Ok(v)
+              },
+            )
+            true
+          }
+        }
       })
-      match @async.with_timeout_opt(50, () => try? task.wait()) {
-        Some(Ok(_)) => {
-          task.cancel()
-          ignore(try? task.wait())
-          raise ServerNotReady
-        }
-        Some(Err(@os_error.OSError(errno, ..))) if errno == 1 => {
-          task.cancel()
-          ignore(try? task.wait())
-          raise SocketBindUnavailable
-        }
-        Some(Err(@os_error.OSError(_) as err)) if err.is_EACCES() => {
-          task.cancel()
-          ignore(try? task.wait())
-          raise SocketBindUnavailable
-        }
-        Some(Err(@os_error.OSError(errno, ..))) if errno == 48 ||
-          errno == 98 ||
-          errno == 10048 => {
-          task.cancel()
-          ignore(try? task.wait())
-          false
-        }
-        Some(Err(err)) => {
-          task.cancel()
-          ignore(try? task.wait())
-          raise err
-        }
-        None => {
-          wait_until_ready(port)
-          run_test(port)
-          task.cancel()
-          ignore(try? task.wait())
-          true
-        }
-      }
-    })
+    catch {
+      err => Err(err)
+    } noraise {
+      v => Ok(v)
+    }
     match attempt_result {
       Ok(true) => return
       Ok(false) => ()
@@ -252,7 +304,7 @@ async fn issue_request(
   body? : Bytes,
   headers? : Map[String, String],
 ) -> (@http.Response, Bytes) {
-  let client = @http.Client::new("http://127.0.0.1:\{port}")
+  let client = @http.Client::Client("http://127.0.0.1:\{port}")
   defer client.close()
   client.request(meth, path, extra_headers=headers.unwrap_or({}))
   match body {
@@ -317,7 +369,7 @@ async fn read_raw_http_response(client : @socket.Tcp) -> (String, String) {
 
 ///|
 fn repeated_ascii_text(piece : String, count : Int) -> String {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   for _ in 0..<count {
     buffer.write_string_utf8(piece)
   }
@@ -328,14 +380,14 @@ fn repeated_ascii_text(piece : String, count : Int) -> String {
 
 ///|
 async fn read_chunked_http_body(client : @socket.Tcp) -> String {
-  let buffer = @buffer.new()
+  let buffer = Buffer()
   for ;; {
     let chunk_len_line = client.read_until("\r\n").unwrap_or("")
     guard chunk_len_line != "" else {
       fail("unexpected EOF while reading chunked response size")
     }
     let chunk_len_text = match chunk_len_line.find(";") {
-      Some(index) => chunk_len_line[:index].to_string()
+      Some(index) => chunk_len_line[:index].to_owned()
       None => chunk_len_line
     }
     let chunk_len = @string.parse_int(
@@ -434,12 +486,24 @@ async fn issue_raw_websocket_close(
   path : String,
   frames : Array[Bytes],
 ) -> (@websocket.CloseCode, String?) {
-  let http_client = @http.Client::new("http://127.0.0.1:\{port}")
+  let http_client = @http.Client::Client("http://127.0.0.1:\{port}")
   defer http_client.close()
   ignore(@websocket.from_http_client(http_client, path))
   for frame in frames {
-    ignore(try? http_client.write(frame))
-    ignore(try? http_client.flush())
+    ignore(
+      try http_client.write(frame) catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      },
+    )
+    ignore(
+      try http_client.flush() catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      },
+    )
   }
   read_raw_websocket_close_frame(http_client)
 }
@@ -477,9 +541,9 @@ fn raw_header_value(raw_headers : String, header_name : String) -> String? {
   for line in raw_headers.split("\r\n") {
     match line.find(":") {
       Some(index) => {
-        let key = line[:index].to_string().to_lower()
+        let key = line[:index].to_owned().to_lower()
         if key == needle {
-          return Some(line[index + 1:].trim(chars=" ").to_string())
+          return Some(line[index + 1:].trim(chars=" ").to_owned())
         }
       }
       None => ()
@@ -495,7 +559,7 @@ fn raw_header_count(raw_headers : String, header_name : String) -> Int {
   for line in raw_headers.split("\r\n") {
     match line.find(":") {
       Some(index) => {
-        let key = line[:index].to_string().to_lower()
+        let key = line[:index].to_owned().to_lower()
         if key == needle {
           count += 1
         }
@@ -592,10 +656,10 @@ async test "serve preserves middleware onion order" {
 
 ///|
 async test "serve keeps invalid websocket opcodes connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -616,7 +680,7 @@ async test "serve keeps invalid websocket opcodes connection-local and stays hea
     "ok"
   })
   with_test_server(app, port => {
-    let http_client = @http.Client::new("http://127.0.0.1:\{port}")
+    let http_client = @http.Client("http://127.0.0.1:\{port}")
     defer http_client.close()
     let ws_client = @websocket.from_http_client(http_client, "/ws")
     defer ws_client.close()
@@ -626,7 +690,11 @@ async test "serve keeps invalid websocket opcodes connection-local and stays hea
       })
       match
         @async.with_timeout_opt(200, () => {
-          try? ws_client.recv().read_all().binary()
+          try ws_client.recv().read_all().binary() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
         }) {
         Some(Err(@websocket.ConnectionClosed(ProtocolError, Some(reason)))) =>
           inspect(reason, content="Invalid OP code 11")
@@ -672,10 +740,10 @@ async test "serve keeps invalid websocket opcodes connection-local and stays hea
 
 ///|
 async test "serve keeps invalid websocket text payloads connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -703,7 +771,13 @@ async test "serve keeps invalid websocket text payloads connection-local and sta
     ..write(Bytes::from_array([b'\x80']))
     .end_message()
     match
-      @async.with_timeout_opt(200, () => try? client.recv().read_all().binary()) {
+      @async.with_timeout_opt(200, () => {
+        try client.recv().read_all().binary() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Err(@websocket.ConnectionClosed(InvalidFramePayload, Some(reason)))) =>
         inspect(reason, content="Text message is not valid UTF8")
       Some(Err(@websocket.ConnectionClosed(code, reason))) =>
@@ -747,10 +821,10 @@ async test "serve keeps invalid websocket text payloads connection-local and sta
 
 ///|
 async test "serve keeps websocket protocol edge failures connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -776,7 +850,7 @@ async test "serve keeps websocket protocol edge failures connection-local and st
       expected_code : @websocket.CloseCode,
       expected_reason : String,
     ) -> Unit {
-      let http_client = @http.Client::new("http://127.0.0.1:\{port}")
+      let http_client = @http.Client("http://127.0.0.1:\{port}")
       defer http_client.close()
       let ws_client = @websocket.from_http_client(http_client, "/ws")
       defer ws_client.close()
@@ -784,7 +858,11 @@ async test "serve keeps websocket protocol edge failures connection-local and st
         group.spawn_bg(() => http_client.write(frame))
         match
           @async.with_timeout_opt(200, () => {
-            try? ws_client.recv().read_all().binary()
+            try ws_client.recv().read_all().binary() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
           }) {
           Some(Err(@websocket.ConnectionClosed(code, Some(reason)))) => {
             assert_eq(code, expected_code)
@@ -848,10 +926,10 @@ async test "serve keeps websocket protocol edge failures connection-local and st
 
 ///|
 async test "serve keeps websocket sequencing and control-size failures connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -939,10 +1017,10 @@ async test "serve keeps websocket sequencing and control-size failures connectio
 
 ///|
 async test "serve keeps websocket continuation and length-format failures connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1030,10 +1108,10 @@ async test "serve keeps websocket continuation and length-format failures connec
 
 ///|
 async test "serve echoes websocket close reasons and stays healthy" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1088,10 +1166,10 @@ async test "serve echoes websocket close reasons and stays healthy" {
 
 ///|
 async test "serve rejects invalid websocket close reasons and stays healthy" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1146,10 +1224,10 @@ async test "serve rejects invalid websocket close reasons and stays healthy" {
 
 ///|
 async test "serve auto-replies to websocket ping frames without leaking control messages" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1170,7 +1248,7 @@ async test "serve auto-replies to websocket ping frames without leaking control 
     "ok"
   })
   with_test_server(app, port => {
-    let http_client = @http.Client::new("http://127.0.0.1:\{port}")
+    let http_client = @http.Client("http://127.0.0.1:\{port}")
     defer http_client.close()
     let ws_client = @websocket.from_http_client(http_client, "/ws")
     defer ws_client.close()
@@ -1211,10 +1289,10 @@ async test "serve auto-replies to websocket ping frames without leaking control 
 
 ///|
 async test "serve ignores unsolicited websocket pong frames without leaking control messages" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1235,7 +1313,7 @@ async test "serve ignores unsolicited websocket pong frames without leaking cont
     "ok"
   })
   with_test_server(app, port => {
-    let http_client = @http.Client::new("http://127.0.0.1:\{port}")
+    let http_client = @http.Client("http://127.0.0.1:\{port}")
     defer http_client.close()
     let ws_client = @websocket.from_http_client(http_client, "/ws")
     defer ws_client.close()
@@ -1272,10 +1350,10 @@ async test "serve ignores unsolicited websocket pong frames without leaking cont
 
 ///|
 async test "serve routes fragmented websocket messages while replying to in-flight pings" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1296,7 +1374,7 @@ async test "serve routes fragmented websocket messages while replying to in-flig
     "ok"
   })
   with_test_server(app, port => {
-    let http_client = @http.Client::new("http://127.0.0.1:\{port}")
+    let http_client = @http.Client("http://127.0.0.1:\{port}")
     defer http_client.close()
     ignore(@websocket.from_http_client(http_client, "/ws"))
 
@@ -1355,10 +1433,10 @@ async test "serve routes fragmented websocket messages while replying to in-flig
 
 ///|
 async test "serve replies to multiple websocket pings in order without leaking control messages" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
-  let messages : Ref[Int] = Ref::new(0)
-  let healthy_hits : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
+  let messages : Ref[Int] = Ref(0)
+  let healthy_hits : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1379,7 +1457,7 @@ async test "serve replies to multiple websocket pings in order without leaking c
     "ok"
   })
   with_test_server(app, port => {
-    let http_client = @http.Client::new("http://127.0.0.1:\{port}")
+    let http_client = @http.Client("http://127.0.0.1:\{port}")
     defer http_client.close()
     ignore(@websocket.from_http_client(http_client, "/ws"))
 
@@ -1449,11 +1527,13 @@ async test "serve replies to multiple websocket pings in order without leaking c
 ///|
 async test "serve_on enforces max_connections" {
   let app = @crescent.App()
-  let gate = @async.Queue::new(kind=Unbounded)
-  let started : Ref[Int] = Ref::new(0)
+  let gate = @async.Queue(kind=Unbounded)
+  let started : Ref[Int] = Ref(0)
   app.get("/serial", _ => {
     started.val += 1
-    ignore(try? gate.get())
+    gate.get() catch {
+      err => ignore(err)
+    }
     "ok"
   })
   app.get("/__app_ready", _ => "ready")
@@ -1466,14 +1546,22 @@ async test "serve_on enforces max_connections" {
     wait_until_ready(port)
 
     let first = group.spawn(no_wait=true, () => {
-      try? @http.get(localhost_url(port, "/serial"))
+      try @http.get(localhost_url(port, "/serial")) catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
     @async.retry(FixedDelay(20), max_retry=50, () => {
       guard started.val == 1 else { raise ServerNotReady }
     })
 
     let second = group.spawn(no_wait=true, () => {
-      try? @http.get(localhost_url(port, "/serial"))
+      try @http.get(localhost_url(port, "/serial")) catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
     match @async.with_timeout_opt(100, () => second.wait()) {
       None => ()
@@ -1523,10 +1611,13 @@ async test "serve_on rejects non-positive max_connections" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    options=NativeServeOptions(max_connections=0),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve_on(server, options=NativeServeOptions(max_connections=0))
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidMaxConnections(0)) => ()
     Err(err) => fail("unexpected invalid max_connections error: \{err}")
@@ -1537,10 +1628,13 @@ async test "serve_on rejects non-positive max_connections" {
 ///|
 async test "serve rejects non-positive max_connections" {
   let app = @crescent.App()
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    options=NativeServeOptions(max_connections=0),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve(port=0, options=NativeServeOptions(max_connections=0))
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidMaxConnections(0)) => ()
     Err(err) => fail("unexpected invalid max_connections error: \{err}")
@@ -1551,7 +1645,7 @@ async test "serve rejects non-positive max_connections" {
 ///|
 async test "serve_on enforces max_request_body_bytes for fixed-length bodies" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref::new(0)
+  let handled : Ref[Int] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body
@@ -1602,7 +1696,7 @@ async test "serve_on enforces max_request_body_bytes for fixed-length bodies" {
 ///|
 async test "serve_on treats max_request_body_bytes=0 as empty-body only" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref::new(0)
+  let handled : Ref[Int] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body.length().to_string()
@@ -1674,7 +1768,7 @@ async test "serve_on treats max_request_body_bytes=0 as empty-body only" {
 ///|
 async test "serve_on enforces max_request_body_bytes for chunked bodies" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref::new(0)
+  let handled : Ref[Int] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body
@@ -1721,7 +1815,7 @@ async test "serve_on enforces max_request_body_bytes for chunked bodies" {
 ///|
 async test "serve_on accepts exact-limit chunked bodies across multiple reads" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref::new(0)
+  let handled : Ref[Int] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body.length().to_string()
@@ -1765,10 +1859,13 @@ async test "serve_on rejects negative max_request_body_bytes" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    options=NativeServeOptions(max_request_body_bytes=-1),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve_on(server, options=NativeServeOptions(max_request_body_bytes=-1))
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidMaxRequestBodyBytes(-1)) => ()
     Err(err) => fail("unexpected invalid max_request_body_bytes error: \{err}")
@@ -1781,12 +1878,18 @@ async test "serve_on_until rejects negative max_request_body_bytes" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    shutdown~,
-    options=NativeServeOptions(max_request_body_bytes=-1),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      shutdown~,
+      options=NativeServeOptions(max_request_body_bytes=-1),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidMaxRequestBodyBytes(-1)) => ()
     Err(err) =>
@@ -1798,10 +1901,13 @@ async test "serve_on_until rejects negative max_request_body_bytes" {
 ///|
 async test "serve rejects negative max_request_body_bytes" {
   let app = @crescent.App()
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    options=NativeServeOptions(max_request_body_bytes=-1),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve(port=0, options=NativeServeOptions(max_request_body_bytes=-1))
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidMaxRequestBodyBytes(-1)) => ()
     Err(err) => fail("unexpected invalid max_request_body_bytes error: \{err}")
@@ -1814,10 +1920,16 @@ async test "serve_on rejects non-positive request_body_read_timeout_ms" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    options=NativeServeOptions(request_body_read_timeout_ms=0),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      options=NativeServeOptions(request_body_read_timeout_ms=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidRequestBodyReadTimeoutMs(0)) => ()
     Err(err) =>
@@ -1831,12 +1943,18 @@ async test "serve_on_until rejects non-positive request_body_read_timeout_ms" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    shutdown~,
-    options=NativeServeOptions(request_body_read_timeout_ms=0),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      shutdown~,
+      options=NativeServeOptions(request_body_read_timeout_ms=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidRequestBodyReadTimeoutMs(0)) => ()
     Err(err) =>
@@ -1851,10 +1969,16 @@ async test "serve_on_until rejects non-positive request_body_read_timeout_ms" {
 ///|
 async test "serve rejects non-positive request_body_read_timeout_ms" {
   let app = @crescent.App()
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    options=NativeServeOptions(request_body_read_timeout_ms=0),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve(
+      port=0,
+      options=NativeServeOptions(request_body_read_timeout_ms=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidRequestBodyReadTimeoutMs(0)) => ()
     Err(err) =>
@@ -1866,12 +1990,18 @@ async test "serve rejects non-positive request_body_read_timeout_ms" {
 ///|
 async test "serve_until rejects non-positive request_body_read_timeout_ms" {
   let app = @crescent.App()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    shutdown~,
-    options=NativeServeOptions(request_body_read_timeout_ms=0),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve(
+      port=0,
+      shutdown~,
+      options=NativeServeOptions(request_body_read_timeout_ms=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidRequestBodyReadTimeoutMs(0)) => ()
     Err(err) =>
@@ -1886,10 +2016,16 @@ async test "serve_on rejects non-positive websocket_outgoing_queue_capacity" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0)) => ()
     Err(err) =>
@@ -1904,12 +2040,18 @@ async test "serve_on_until rejects non-positive websocket_outgoing_queue_capacit
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    shutdown~,
-    options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      shutdown~,
+      options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0)) => ()
     Err(err) =>
@@ -1926,10 +2068,16 @@ async test "serve_on_until rejects non-positive websocket_outgoing_queue_capacit
 ///|
 async test "serve rejects non-positive websocket_outgoing_queue_capacity" {
   let app = @crescent.App()
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve(
+      port=0,
+      options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0)) => ()
     Err(err) =>
@@ -1942,12 +2090,18 @@ async test "serve rejects non-positive websocket_outgoing_queue_capacity" {
 ///|
 async test "serve_until rejects non-positive websocket_outgoing_queue_capacity" {
   let app = @crescent.App()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    shutdown~,
-    options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve(
+      port=0,
+      shutdown~,
+      options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0)) => ()
     Err(err) =>
@@ -1964,10 +2118,16 @@ async test "serve_on rejects non-positive websocket_read_timeout_ms" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    options=NativeServeOptions(websocket_read_timeout_ms=0),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      options=NativeServeOptions(websocket_read_timeout_ms=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketReadTimeoutMs(0)) => ()
     Err(err) =>
@@ -1981,12 +2141,18 @@ async test "serve_on_until rejects non-positive websocket_read_timeout_ms" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    shutdown~,
-    options=NativeServeOptions(websocket_read_timeout_ms=0),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      shutdown~,
+      options=NativeServeOptions(websocket_read_timeout_ms=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketReadTimeoutMs(0)) => ()
     Err(err) =>
@@ -1999,10 +2165,13 @@ async test "serve_on_until rejects non-positive websocket_read_timeout_ms" {
 ///|
 async test "serve rejects non-positive websocket_read_timeout_ms" {
   let app = @crescent.App()
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    options=NativeServeOptions(websocket_read_timeout_ms=0),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve(port=0, options=NativeServeOptions(websocket_read_timeout_ms=0))
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketReadTimeoutMs(0)) => ()
     Err(err) =>
@@ -2014,12 +2183,18 @@ async test "serve rejects non-positive websocket_read_timeout_ms" {
 ///|
 async test "serve_until rejects non-positive websocket_read_timeout_ms" {
   let app = @crescent.App()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    shutdown~,
-    options=NativeServeOptions(websocket_read_timeout_ms=0),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve(
+      port=0,
+      shutdown~,
+      options=NativeServeOptions(websocket_read_timeout_ms=0),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketReadTimeoutMs(0)) => ()
     Err(err) =>
@@ -2033,10 +2208,16 @@ async test "serve_on rejects negative websocket_max_message_bytes" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    options=NativeServeOptions(websocket_max_message_bytes=-1),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      options=NativeServeOptions(websocket_max_message_bytes=-1),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketMaxMessageBytes(-1)) => ()
     Err(err) =>
@@ -2050,12 +2231,18 @@ async test "serve_on_until rejects negative websocket_max_message_bytes" {
   let app = @crescent.App()
   let server = allocate_test_server()
   defer server.close()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve_on(
-    server,
-    shutdown~,
-    options=NativeServeOptions(websocket_max_message_bytes=-1),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve_on(
+      server,
+      shutdown~,
+      options=NativeServeOptions(websocket_max_message_bytes=-1),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketMaxMessageBytes(-1)) => ()
     Err(err) =>
@@ -2070,10 +2257,16 @@ async test "serve_on_until rejects negative websocket_max_message_bytes" {
 ///|
 async test "serve rejects negative websocket_max_message_bytes" {
   let app = @crescent.App()
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    options=NativeServeOptions(websocket_max_message_bytes=-1),
-  )
+  let result : Result[Unit, Error] = try
+    app.serve(
+      port=0,
+      options=NativeServeOptions(websocket_max_message_bytes=-1),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketMaxMessageBytes(-1)) => ()
     Err(err) =>
@@ -2085,12 +2278,18 @@ async test "serve rejects negative websocket_max_message_bytes" {
 ///|
 async test "serve_until rejects negative websocket_max_message_bytes" {
   let app = @crescent.App()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    shutdown~,
-    options=NativeServeOptions(websocket_max_message_bytes=-1),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve(
+      port=0,
+      shutdown~,
+      options=NativeServeOptions(websocket_max_message_bytes=-1),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidWebSocketMaxMessageBytes(-1)) => ()
     Err(err) =>
@@ -2103,7 +2302,7 @@ async test "serve_until rejects negative websocket_max_message_bytes" {
 ///|
 async test "serve_on times out slow request bodies" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref::new(0)
+  let handled : Ref[Int] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body
@@ -2160,12 +2359,18 @@ async test "serve_on times out slow request bodies" {
 ///|
 async test "serve_until rejects negative max_request_body_bytes" {
   let app = @crescent.App()
-  let shutdown = @async.Queue::new(kind=Unbounded)
-  let result : Result[Unit, Error] = try? app.serve(
-    port=0,
-    shutdown~,
-    options=NativeServeOptions(max_request_body_bytes=-1),
-  )
+  let shutdown = @async.Queue(kind=Unbounded)
+  let result : Result[Unit, Error] = try
+    app.serve(
+      port=0,
+      shutdown~,
+      options=NativeServeOptions(max_request_body_bytes=-1),
+    )
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match result {
     Err(NativeServeError::InvalidMaxRequestBodyBytes(-1)) => ()
     Err(err) =>
@@ -2273,9 +2478,13 @@ async test "serve_on_until stops on shutdown signal" {
   @async.with_task_group(group => {
     let server = allocate_test_server()
     let port = server.addr.port()
-    let shutdown = @async.Queue::new(kind=Blocking(0))
+    let shutdown = @async.Queue(kind=Blocking(0))
     let task = group.spawn(no_wait=true, () => {
-      try? app.serve_on(server, shutdown~)
+      try app.serve_on(server, shutdown~) catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
     wait_until_ready(port)
 
@@ -2316,12 +2525,20 @@ async test "serve_on_until broadcasts shutdown when the queue is closed" {
     let server2 = allocate_test_server()
     let port1 = server1.addr.port()
     let port2 = server2.addr.port()
-    let shutdown = @async.Queue::new(kind=Blocking(0))
+    let shutdown = @async.Queue(kind=Blocking(0))
     let task1 = group.spawn(no_wait=true, () => {
-      try? app1.serve_on(server1, shutdown~)
+      try app1.serve_on(server1, shutdown~) catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
     let task2 = group.spawn(no_wait=true, () => {
-      try? app2.serve_on(server2, shutdown~)
+      try app2.serve_on(server2, shutdown~) catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
     wait_until_ready(port1)
     wait_until_ready(port2)
@@ -2367,47 +2584,59 @@ async test "serve_until binds by port and stops on shutdown signal" {
   let start_offset = @async.now().to_int() % 20_000
   for attempt = 0; attempt < 2_048; attempt = attempt + 1 {
     let port = 40_000 + (start_offset + attempt) % 20_000
-    let attempt_result : Result[Bool, Error] = try? @async.with_task_group(group => {
-      let shutdown = @async.Queue::new(kind=Unbounded)
-      let task = group.spawn(no_wait=true, () => {
-        try? app.serve(port~, shutdown~)
-      })
-      match @async.with_timeout_opt(50, () => task.wait()) {
-        Some(result) =>
-          match result {
-            Ok(_) => fail("serve_until exited before shutdown signal")
-            Err(@os_error.OSError(errno, ..)) if errno == 1 =>
-              raise SocketBindUnavailable
-            Err(@os_error.OSError(_) as err) if err.is_EACCES() =>
-              raise SocketBindUnavailable
-            Err(@os_error.OSError(errno, ..)) if errno == 48 ||
-              errno == 98 ||
-              errno == 10048 => false
-            Err(err) => raise err
+    let attempt_result : Result[Bool, Error] = try
+      @async.with_task_group(group => {
+        let shutdown = @async.Queue(kind=Unbounded)
+        let task = group.spawn(no_wait=true, () => {
+          try app.serve(port~, shutdown~) catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
           }
-        None => {
-          wait_until_ready(port)
-          let (response, body) = @http.get(localhost_url(port, "/__app_ready"))
-          assert_eq(response.code, 200)
-          inspect(body.text(), content="ready")
-          shutdown.put(())
-          match @async.with_timeout_opt(200, () => task.wait()) {
-            Some(result) =>
-              match result {
-                Ok(_) => true
-                Err(err) =>
-                  fail(
-                    "expected serve_until to stop without runtime failure: \{err}",
-                  )
-              }
-            None =>
-              fail(
-                "timed out waiting for serve_until to stop after shutdown signal",
-              )
+        })
+        match @async.with_timeout_opt(50, () => task.wait()) {
+          Some(result) =>
+            match result {
+              Ok(_) => fail("serve_until exited before shutdown signal")
+              Err(@os_error.OSError(errno, ..)) if errno == 1 =>
+                raise SocketBindUnavailable
+              Err(@os_error.OSError(_) as err) if err.is_EACCES() =>
+                raise SocketBindUnavailable
+              Err(@os_error.OSError(errno, ..)) if errno == 48 ||
+                errno == 98 ||
+                errno == 10048 => false
+              Err(err) => raise err
+            }
+          None => {
+            wait_until_ready(port)
+            let (response, body) = @http.get(
+              localhost_url(port, "/__app_ready"),
+            )
+            assert_eq(response.code, 200)
+            inspect(body.text(), content="ready")
+            shutdown.put(())
+            match @async.with_timeout_opt(200, () => task.wait()) {
+              Some(result) =>
+                match result {
+                  Ok(_) => true
+                  Err(err) =>
+                    fail(
+                      "expected serve_until to stop without runtime failure: \{err}",
+                    )
+                }
+              None =>
+                fail(
+                  "timed out waiting for serve_until to stop after shutdown signal",
+                )
+            }
           }
         }
-      }
-    })
+      })
+    catch {
+      err => Err(err)
+    } noraise {
+      v => Ok(v)
+    }
     match attempt_result {
       Ok(true) => return
       Ok(false) => ()
@@ -3051,7 +3280,13 @@ async test "serve closes websocket clients after read timeout between messages" 
       inspect(client.recv().read_all().text(), content="echo:ping")
 
       match
-        @async.with_timeout_opt(250, () => try? client.recv().read_all().text()) {
+        @async.with_timeout_opt(250, () => {
+          try client.recv().read_all().text() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+        }) {
         Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) =>
           inspect(reason, content="websocket read timeout")
         Some(Err(@websocket.ConnectionClosed(code, reason))) =>
@@ -3109,7 +3344,11 @@ async test "serve closes oversized websocket text messages and stays healthy" {
       oversized_client.send_text("12345")
       match
         @async.with_timeout_opt(300, () => {
-          try? oversized_client.recv().read_all().text()
+          try oversized_client.recv().read_all().text() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
         }) {
         Some(Err(@websocket.ConnectionClosed(MessageTooBig, Some(reason)))) =>
           inspect(reason, content="websocket message too big")
@@ -3177,7 +3416,11 @@ async test "serve closes oversized websocket binary messages" {
       client.send_binary([0, 1, 2, 3, 4])
       match
         @async.with_timeout_opt(300, () => {
-          try? client.recv().read_all().binary()
+          try client.recv().read_all().binary() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
         }) {
         Some(Err(@websocket.ConnectionClosed(MessageTooBig, Some(reason)))) =>
           inspect(reason, content="websocket message too big")
@@ -3248,7 +3491,11 @@ async test "serve treats websocket_max_message_bytes=0 as empty-message only" {
       oversized_client.send_text("x")
       match
         @async.with_timeout_opt(300, () => {
-          try? oversized_client.recv().read_all().text()
+          try oversized_client.recv().read_all().text() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
         }) {
         Some(Err(@websocket.ConnectionClosed(MessageTooBig, Some(reason)))) =>
           inspect(reason, content="websocket message too big")
@@ -3271,7 +3518,11 @@ async test "serve treats websocket_max_message_bytes=0 as empty-message only" {
       oversized_binary_client.send_binary([0])
       match
         @async.with_timeout_opt(300, () => {
-          try? oversized_binary_client.recv().read_all().text()
+          try oversized_binary_client.recv().read_all().text() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
         }) {
         Some(Err(@websocket.ConnectionClosed(MessageTooBig, Some(reason)))) =>
           inspect(reason, content="websocket message too big")
@@ -3349,7 +3600,11 @@ async test "serve enforces websocket_max_message_bytes across multiple reads" {
       oversized_client.send_text(repeated_ascii_text("a", 1537))
       match
         @async.with_timeout_opt(300, () => {
-          try? oversized_client.recv().read_all().text()
+          try oversized_client.recv().read_all().text() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
         }) {
         Some(Err(@websocket.ConnectionClosed(MessageTooBig, Some(reason)))) =>
           inspect(reason, content="websocket message too big")
@@ -3388,7 +3643,7 @@ async test "serve enforces websocket_max_message_bytes across multiple reads" {
 
 ///|
 async test "serve rejects websocket upgrades for http-only routes" {
-  let handled : Ref[Int] = Ref::new(0)
+  let handled : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.get("/ws", _ => {
     handled.val += 1
@@ -3475,8 +3730,8 @@ async test "serve accepts padded websocket handshake headers on matched routes" 
 
 ///|
 async test "serve rejects invalid websocket handshakes on matched routes and stays healthy" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.get("/healthy", _ => "ok")
   app.ws("/ws", event => {
@@ -3519,8 +3774,8 @@ async test "serve rejects invalid websocket handshakes on matched routes and sta
 
 ///|
 async test "serve rejects unsupported websocket versions and non-get upgrades" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.get("/healthy", _ => "ok")
   app.ws("/ws", event => {
@@ -3571,8 +3826,8 @@ async test "serve rejects unsupported websocket versions and non-get upgrades" {
 
 ///|
 async test "serve closes the connection after rejected websocket upgrades" {
-  let opened : Ref[Int] = Ref::new(0)
-  let closed : Ref[Int] = Ref::new(0)
+  let opened : Ref[Int] = Ref(0)
+  let closed : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.get("/healthy", _ => "ok")
   app.ws("/ws", event => {
@@ -3626,9 +3881,9 @@ async test "serve closes the connection after rejected websocket upgrades" {
 
 ///|
 async test "serve rejects malformed websocket-like requests on websocket routes without stealing plain http" {
-  let http_hits : Ref[Int] = Ref::new(0)
-  let ws_opened : Ref[Int] = Ref::new(0)
-  let ws_closed : Ref[Int] = Ref::new(0)
+  let http_hits : Ref[Int] = Ref(0)
+  let ws_opened : Ref[Int] = Ref(0)
+  let ws_closed : Ref[Int] = Ref(0)
   let app = @crescent.App()
   app.get("/ws", _ => {
     http_hits.val += 1
@@ -4037,11 +4292,25 @@ async test "serve keeps other reused-app servers alive when one server is cancel
 
     task1.cancel()
     assert_eq(
-      @async.with_timeout_opt(200, () => ignore(try? task1.wait())),
+      @async.with_timeout_opt(200, () => {
+        ignore(
+          try task1.wait() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          },
+        )
+      }),
       Some(()),
     )
     match
-      @async.with_timeout_opt(300, () => try? client1.recv().read_all().text()) {
+      @async.with_timeout_opt(300, () => {
+        try client1.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) =>
         inspect(reason, content="websocket server shutdown")
       Some(Err(@websocket.ConnectionClosed(code, reason))) =>
@@ -4081,7 +4350,7 @@ async test "serve_on_until sends going-away close to websocket clients on shutdo
   @async.with_task_group(group => {
     let server = allocate_test_server()
     let port = server.addr.port()
-    let shutdown = @async.Queue::new(kind=Unbounded)
+    let shutdown = @async.Queue(kind=Unbounded)
     let task = group.spawn(no_wait=true, () => app.serve_on(server, shutdown~))
     wait_until_ready(port)
 
@@ -4093,7 +4362,13 @@ async test "serve_on_until sends going-away close to websocket clients on shutdo
 
     shutdown.put(())
     match
-      @async.with_timeout_opt(300, () => try? client.recv().read_all().text()) {
+      @async.with_timeout_opt(300, () => {
+        try client.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) =>
         inspect(reason, content="websocket server shutdown")
       Some(Err(@websocket.ConnectionClosed(code, reason))) =>
@@ -4111,7 +4386,14 @@ async test "serve_on_until sends going-away close to websocket clients on shutdo
       None => fail("timed out waiting for websocket shutdown close")
     }
 
-    match @async.with_timeout_opt(300, () => try? task.wait()) {
+    match
+      @async.with_timeout_opt(300, () => {
+        try task.wait() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Ok(_)) => ()
       Some(Err(err)) =>
         fail(
@@ -4140,7 +4422,7 @@ async test "serve_on_until broadcasts going-away close when the shutdown queue i
     let server2 = allocate_test_server()
     let port1 = server1.addr.port()
     let port2 = server2.addr.port()
-    let shutdown = @async.Queue::new(kind=Unbounded)
+    let shutdown = @async.Queue(kind=Unbounded)
     let task1 = group.spawn(no_wait=true, () => app.serve_on(server1, shutdown~))
     let task2 = group.spawn(no_wait=true, () => app.serve_on(server2, shutdown~))
     wait_until_ready(port1)
@@ -4159,7 +4441,13 @@ async test "serve_on_until broadcasts going-away close when the shutdown queue i
     shutdown.close()
 
     match
-      @async.with_timeout_opt(300, () => try? client1.recv().read_all().text()) {
+      @async.with_timeout_opt(300, () => {
+        try client1.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) =>
         inspect(reason, content="websocket server shutdown")
       Some(Err(@websocket.ConnectionClosed(code, reason))) =>
@@ -4178,7 +4466,13 @@ async test "serve_on_until broadcasts going-away close when the shutdown queue i
     }
 
     match
-      @async.with_timeout_opt(300, () => try? client2.recv().read_all().text()) {
+      @async.with_timeout_opt(300, () => {
+        try client2.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) =>
         inspect(reason, content="websocket server shutdown")
       Some(Err(@websocket.ConnectionClosed(code, reason))) =>
@@ -4197,7 +4491,14 @@ async test "serve_on_until broadcasts going-away close when the shutdown queue i
         fail("timed out waiting for second websocket queue-close shutdown")
     }
 
-    match @async.with_timeout_opt(300, () => try? task1.wait()) {
+    match
+      @async.with_timeout_opt(300, () => {
+        try task1.wait() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Ok(_)) => ()
       Some(Err(err)) =>
         fail(
@@ -4208,7 +4509,14 @@ async test "serve_on_until broadcasts going-away close when the shutdown queue i
           "timed out waiting for the first websocket server to stop after queue close",
         )
     }
-    match @async.with_timeout_opt(300, () => try? task2.wait()) {
+    match
+      @async.with_timeout_opt(300, () => {
+        try task2.wait() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Ok(_)) => ()
       Some(Err(err)) =>
         fail(
@@ -4241,7 +4549,7 @@ async test "serve_on_until queue close stops remaining reused websocket servers 
     let server2 = allocate_test_server()
     let port1 = server1.addr.port()
     let port2 = server2.addr.port()
-    let shutdown = @async.Queue::new(kind=Unbounded)
+    let shutdown = @async.Queue(kind=Unbounded)
     let task1 = group.spawn(no_wait=true, () => app.serve_on(server1, shutdown~))
     let task2 = group.spawn(no_wait=true, () => app.serve_on(server2, shutdown~))
     wait_until_ready(port1)
@@ -4261,11 +4569,25 @@ async test "serve_on_until queue close stops remaining reused websocket servers 
 
     task1.cancel()
     assert_eq(
-      @async.with_timeout_opt(200, () => ignore(try? task1.wait())),
+      @async.with_timeout_opt(200, () => {
+        ignore(
+          try task1.wait() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          },
+        )
+      }),
       Some(()),
     )
     match
-      @async.with_timeout_opt(300, () => try? client1.recv().read_all().text()) {
+      @async.with_timeout_opt(300, () => {
+        try client1.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) =>
         inspect(reason, content="websocket server shutdown")
       Some(Err(@websocket.ConnectionClosed(code, reason))) =>
@@ -4289,7 +4611,13 @@ async test "serve_on_until queue close stops remaining reused websocket servers 
 
     shutdown.close()
     match
-      @async.with_timeout_opt(300, () => try? client2.recv().read_all().text()) {
+      @async.with_timeout_opt(300, () => {
+        try client2.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) =>
         inspect(reason, content="websocket server shutdown")
       Some(Err(@websocket.ConnectionClosed(code, reason))) =>
@@ -4310,7 +4638,14 @@ async test "serve_on_until queue close stops remaining reused websocket servers 
         )
     }
 
-    match @async.with_timeout_opt(300, () => try? task2.wait()) {
+    match
+      @async.with_timeout_opt(300, () => {
+        try task2.wait() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Ok(_)) => ()
       Some(Err(err)) =>
         fail(
@@ -4343,7 +4678,7 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
     let server2 = allocate_test_server()
     let port1 = server1.addr.port()
     let port2 = server2.addr.port()
-    let shutdown = @async.Queue::new(kind=Blocking(0))
+    let shutdown = @async.Queue(kind=Blocking(0))
     let task1 = group.spawn(no_wait=true, () => app.serve_on(server1, shutdown~))
     let task2 = group.spawn(no_wait=true, () => app.serve_on(server2, shutdown~))
     wait_until_ready(port1)
@@ -4361,10 +4696,18 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
 
     shutdown.put(())
     let client1_after = @async.with_timeout_opt(300, () => {
-      try? client1.recv().read_all().text()
+      try client1.recv().read_all().text() catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
     let client2_after = @async.with_timeout_opt(300, () => {
-      try? client2.recv().read_all().text()
+      try client2.recv().read_all().text() catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
 
     match client1_after {
@@ -4385,7 +4728,14 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
               "expected surviving reused websocket client to stay open after shutdown signal, got text: \{text}",
             )
         }
-        match @async.with_timeout_opt(300, () => try? task1.wait()) {
+        match
+          @async.with_timeout_opt(300, () => {
+            try task1.wait() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
+          }) {
           Some(Ok(_)) => ()
           Some(Err(err)) =>
             fail(
@@ -4396,7 +4746,14 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
               "timed out waiting for the signaled reused websocket server to stop",
             )
         }
-        match @async.with_timeout_opt(100, () => try? task2.wait()) {
+        match
+          @async.with_timeout_opt(100, () => {
+            try task2.wait() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
+          }) {
           Some(result) =>
             fail(
               "expected sibling reused websocket server to stay alive after one shutdown signal, got \{result}",
@@ -4420,7 +4777,11 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
         }
         match
           @async.with_timeout_opt(300, () => {
-            try? client2.recv().read_all().text()
+            try client2.recv().read_all().text() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
           }) {
           Some(Err(@websocket.ConnectionClosed(GoingAway, Some(second_reason)))) =>
             inspect(second_reason, content="websocket server shutdown")
@@ -4441,7 +4802,14 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
               "expected surviving reused websocket client to observe second shutdown-signal close",
             )
         }
-        match @async.with_timeout_opt(300, () => try? task2.wait()) {
+        match
+          @async.with_timeout_opt(300, () => {
+            try task2.wait() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
+          }) {
           Some(Ok(_)) => ()
           Some(Err(err)) =>
             fail(
@@ -4469,7 +4837,14 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
         match client2_after {
           Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) => {
             inspect(reason, content="websocket server shutdown")
-            match @async.with_timeout_opt(300, () => try? task2.wait()) {
+            match
+              @async.with_timeout_opt(300, () => {
+                try task2.wait() catch {
+                  err => Err(err)
+                } noraise {
+                  v => Ok(v)
+                }
+              }) {
               Some(Ok(_)) => ()
               Some(Err(err)) =>
                 fail(
@@ -4480,7 +4855,14 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
                   "timed out waiting for the signaled reused websocket server to stop",
                 )
             }
-            match @async.with_timeout_opt(100, () => try? task1.wait()) {
+            match
+              @async.with_timeout_opt(100, () => {
+                try task1.wait() catch {
+                  err => Err(err)
+                } noraise {
+                  v => Ok(v)
+                }
+              }) {
               Some(result) =>
                 fail(
                   "expected sibling reused websocket server to stay alive after one shutdown signal, got \{result}",
@@ -4504,7 +4886,11 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
             }
             match
               @async.with_timeout_opt(300, () => {
-                try? client1.recv().read_all().text()
+                try client1.recv().read_all().text() catch {
+                  err => Err(err)
+                } noraise {
+                  v => Ok(v)
+                }
               }) {
               Some(
                 Err(@websocket.ConnectionClosed(GoingAway, Some(second_reason)))
@@ -4526,7 +4912,14 @@ async test "serve_on_until shutdown signal wakes one reused websocket server" {
                   "expected surviving reused websocket client to observe second shutdown-signal close",
                 )
             }
-            match @async.with_timeout_opt(300, () => try? task1.wait()) {
+            match
+              @async.with_timeout_opt(300, () => {
+                try task1.wait() catch {
+                  err => Err(err)
+                } noraise {
+                  v => Ok(v)
+                }
+              }) {
               Some(Ok(_)) => ()
               Some(Err(err)) =>
                 fail(
@@ -4578,7 +4971,7 @@ async test "serve_on_until queue close stops surviving reused websocket server a
     let server2 = allocate_test_server()
     let port1 = server1.addr.port()
     let port2 = server2.addr.port()
-    let shutdown = @async.Queue::new(kind=Blocking(0))
+    let shutdown = @async.Queue(kind=Blocking(0))
     let task1 = group.spawn(no_wait=true, () => app.serve_on(server1, shutdown~))
     let task2 = group.spawn(no_wait=true, () => app.serve_on(server2, shutdown~))
     wait_until_ready(port1)
@@ -4596,10 +4989,18 @@ async test "serve_on_until queue close stops surviving reused websocket server a
 
     shutdown.put(())
     let client1_after = @async.with_timeout_opt(300, () => {
-      try? client1.recv().read_all().text()
+      try client1.recv().read_all().text() catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
     let client2_after = @async.with_timeout_opt(300, () => {
-      try? client2.recv().read_all().text()
+      try client2.recv().read_all().text() catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
     })
 
     match client1_after {
@@ -4620,7 +5021,14 @@ async test "serve_on_until queue close stops surviving reused websocket server a
               "expected surviving reused websocket client to stay open after shutdown signal, got text: \{text}",
             )
         }
-        match @async.with_timeout_opt(300, () => try? task1.wait()) {
+        match
+          @async.with_timeout_opt(300, () => {
+            try task1.wait() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
+          }) {
           Some(Ok(_)) => ()
           Some(Err(err)) =>
             fail(
@@ -4631,7 +5039,14 @@ async test "serve_on_until queue close stops surviving reused websocket server a
               "timed out waiting for the signaled reused websocket server to stop",
             )
         }
-        match @async.with_timeout_opt(100, () => try? task2.wait()) {
+        match
+          @async.with_timeout_opt(100, () => {
+            try task2.wait() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
+          }) {
           Some(result) =>
             fail(
               "expected sibling reused websocket server to stay alive after one shutdown signal, got \{result}",
@@ -4643,7 +5058,11 @@ async test "serve_on_until queue close stops surviving reused websocket server a
         shutdown.close()
         match
           @async.with_timeout_opt(300, () => {
-            try? client2.recv().read_all().text()
+            try client2.recv().read_all().text() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
           }) {
           Some(Err(@websocket.ConnectionClosed(GoingAway, Some(close_reason)))) =>
             inspect(close_reason, content="websocket server shutdown")
@@ -4664,7 +5083,14 @@ async test "serve_on_until queue close stops surviving reused websocket server a
               "expected surviving reused websocket client to observe queue-close shutdown after shutdown signal",
             )
         }
-        match @async.with_timeout_opt(300, () => try? task2.wait()) {
+        match
+          @async.with_timeout_opt(300, () => {
+            try task2.wait() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
+          }) {
           Some(Ok(_)) => ()
           Some(Err(err)) =>
             fail(
@@ -4692,7 +5118,14 @@ async test "serve_on_until queue close stops surviving reused websocket server a
         match client2_after {
           Some(Err(@websocket.ConnectionClosed(GoingAway, Some(reason)))) => {
             inspect(reason, content="websocket server shutdown")
-            match @async.with_timeout_opt(300, () => try? task2.wait()) {
+            match
+              @async.with_timeout_opt(300, () => {
+                try task2.wait() catch {
+                  err => Err(err)
+                } noraise {
+                  v => Ok(v)
+                }
+              }) {
               Some(Ok(_)) => ()
               Some(Err(err)) =>
                 fail(
@@ -4703,7 +5136,14 @@ async test "serve_on_until queue close stops surviving reused websocket server a
                   "timed out waiting for the signaled reused websocket server to stop",
                 )
             }
-            match @async.with_timeout_opt(100, () => try? task1.wait()) {
+            match
+              @async.with_timeout_opt(100, () => {
+                try task1.wait() catch {
+                  err => Err(err)
+                } noraise {
+                  v => Ok(v)
+                }
+              }) {
               Some(result) =>
                 fail(
                   "expected sibling reused websocket server to stay alive after one shutdown signal, got \{result}",
@@ -4715,7 +5155,11 @@ async test "serve_on_until queue close stops surviving reused websocket server a
             shutdown.close()
             match
               @async.with_timeout_opt(300, () => {
-                try? client1.recv().read_all().text()
+                try client1.recv().read_all().text() catch {
+                  err => Err(err)
+                } noraise {
+                  v => Ok(v)
+                }
               }) {
               Some(
                 Err(@websocket.ConnectionClosed(GoingAway, Some(close_reason)))
@@ -4737,7 +5181,14 @@ async test "serve_on_until queue close stops surviving reused websocket server a
                   "expected surviving reused websocket client to observe queue-close shutdown after shutdown signal",
                 )
             }
-            match @async.with_timeout_opt(300, () => try? task1.wait()) {
+            match
+              @async.with_timeout_opt(300, () => {
+                try task1.wait() catch {
+                  err => Err(err)
+                } noraise {
+                  v => Ok(v)
+                }
+              }) {
               Some(Ok(_)) => ()
               Some(Err(err)) =>
                 fail(
@@ -4791,7 +5242,7 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
     let port1 = server1.addr.port()
     let port2 = server2.addr.port()
     let port3 = server3.addr.port()
-    let shutdown = @async.Queue::new(kind=Blocking(0))
+    let shutdown = @async.Queue(kind=Blocking(0))
     let task1 = group.spawn(no_wait=true, () => app.serve_on(server1, shutdown~))
     let task2 = group.spawn(no_wait=true, () => app.serve_on(server2, shutdown~))
     let task3 = group.spawn(no_wait=true, () => app.serve_on(server3, shutdown~))
@@ -4881,9 +5332,27 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
 
     shutdown.put(())
     let outcomes = [
-      @async.with_timeout_opt(300, () => try? client1.recv().read_all().text()),
-      @async.with_timeout_opt(300, () => try? client2.recv().read_all().text()),
-      @async.with_timeout_opt(300, () => try? client3.recv().read_all().text()),
+      @async.with_timeout_opt(300, () => {
+        try client1.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }),
+      @async.with_timeout_opt(300, () => {
+        try client2.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }),
+      @async.with_timeout_opt(300, () => {
+        try client3.recv().read_all().text() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }),
     ]
     let stopped_index = classify_shutdown_signal_results(outcomes)
 
@@ -4894,7 +5363,14 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
       }
     }
 
-    match @async.with_timeout_opt(300, () => try? tasks[stopped_index].wait()) {
+    match
+      @async.with_timeout_opt(300, () => {
+        try tasks[stopped_index].wait() catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
+      }) {
       Some(Ok(_)) => ()
       Some(Err(err)) =>
         fail(
@@ -4908,7 +5384,13 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
 
     for surviving_index in surviving_indexes {
       match
-        @async.with_timeout_opt(100, () => try? tasks[surviving_index].wait()) {
+        @async.with_timeout_opt(100, () => {
+          try tasks[surviving_index].wait() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+        }) {
         Some(result) =>
           fail(
             "expected reused websocket server \{surviving_index + 1} to stay alive after one shutdown signal, got \{result}",
@@ -4925,7 +5407,13 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
 
     for surviving_index in surviving_indexes {
       match
-        @async.with_timeout_opt(100, () => try? tasks[surviving_index].wait()) {
+        @async.with_timeout_opt(100, () => {
+          try tasks[surviving_index].wait() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+        }) {
         Some(result) =>
           fail(
             "expected reused websocket server \{surviving_index + 1} to remain alive immediately before queue close, got \{result}",
@@ -4939,7 +5427,11 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
     for surviving_index in surviving_indexes {
       expect_shutdown_close(
         @async.with_timeout_opt(300, () => {
-          try? clients[surviving_index].recv().read_all().text()
+          try clients[surviving_index].recv().read_all().text() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
         }),
         surviving_index,
         "queue close after shutdown signal",
@@ -4948,7 +5440,13 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
 
     for surviving_index in surviving_indexes {
       match
-        @async.with_timeout_opt(300, () => try? tasks[surviving_index].wait()) {
+        @async.with_timeout_opt(300, () => {
+          try tasks[surviving_index].wait() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+        }) {
         Some(Ok(_)) => ()
         Some(Err(err)) =>
           fail(

@@ -1,8 +1,8 @@
 ///|
-let cached_date_second : Ref[Int64] = Ref::new(0L)
+let cached_date_second : Ref[Int64] = Ref(0L)
 
 ///|
-let cached_date_string : Ref[String] = Ref::new("")
+let cached_date_string : Ref[String] = Ref("")
 
 ///|
 fn current_http_date() -> String {
@@ -56,7 +56,7 @@ test "append_cookie_headers with single cookie sets header" {
     same_site: None,
   })
   append_cookie_headers(headers, cookies)
-  inspect(
+  debug_inspect(
     headers.get("Set-Cookie"),
     content=(
       #|Some("session=abc123")
@@ -113,7 +113,7 @@ async fn send_raw_response_async(
   if !@httputil.has_header_case_insensitive(headers, "Connection") {
     headers.set("Connection", "close")
   }
-  let raw_response = @buffer.new()
+  let raw_response = Buffer()
   raw_response.write_string_utf8("HTTP/1.1 ")
   raw_response.write_string_utf8(response.status_code.to_int().to_string())
   raw_response.write_string_utf8(" ")
@@ -151,7 +151,7 @@ fn finalize_response_body(
   match responder.output_bytes() {
     Some(bytes) => response.raw_body = bytes
     None => {
-      let buffer = @buffer.new()
+      let buffer = Buffer()
       responder.output(buffer)
       response.raw_body = buffer.to_bytes()
     }

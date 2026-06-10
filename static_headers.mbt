@@ -15,10 +15,10 @@ fn parse_accept_encoding_token(token : StringView) -> String? {
   let (name, rest) = match token.find(";") {
     Some(index) =>
       (
-        token[:index].trim(chars=" ").to_string().to_lower(),
+        token[:index].trim(chars=" ").to_owned().to_lower(),
         Some(token[index + 1:]),
       )
-    None => (token.trim(chars=" ").to_string().to_lower(), None)
+    None => (token.trim(chars=" ").to_owned().to_lower(), None)
   }
   // Check q-value — if explicitly 0, refuse this encoding.
   match rest {
@@ -26,7 +26,7 @@ fn parse_accept_encoding_token(token : StringView) -> String? {
       for param in params.split(";") {
         let trimmed = param.trim(chars=" ")
         if trimmed.has_prefix("q=") || trimmed.has_prefix("Q=") {
-          let qval = trimmed[2:].trim(chars=" ").to_string()
+          let qval = trimmed[2:].trim(chars=" ").to_owned()
           // q=0, q=0.0, q=0.00, etc. means refused.
           if qval == "0" || qval == "0.0" || qval == "0.00" || qval == "0.000" {
             return None
@@ -61,9 +61,9 @@ fn normalize_etag_token(token : StringView) -> String {
   let trimmed = token.trim(chars=" ")
   if trimmed.length() >= 2 &&
     (trimmed.has_prefix("W/") || trimmed.has_prefix("w/")) {
-    trimmed[2:].trim(chars=" ").to_string()
+    trimmed[2:].trim(chars=" ").to_owned()
   } else {
-    trimmed.to_string()
+    trimmed.to_owned()
   }
 }
 
@@ -121,7 +121,7 @@ fn static_asset_headers(
     None => {
       let parts = id.split(".").collect()
       if parts.length() > 1 {
-        match provider.get_type(parts[parts.length() - 1].to_string()) {
+        match provider.get_type(parts[parts.length() - 1].to_owned()) {
           Some(t) => headers.set("Content-Type", t)
           None => ()
         }

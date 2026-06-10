@@ -23,10 +23,10 @@ priv enum NativeWebSocketOutbound {
 }
 
 ///|
-let native_ws_hubs : Map[String, NativeWebSocketHub] = Map::new()
+let native_ws_hubs : Map[String, NativeWebSocketHub] = Map([])
 
 ///|
-let native_ws_connection_hubs : Map[String, String] = Map::new()
+let native_ws_connection_hubs : Map[String, String] = Map([])
 
 ///|
 /// Default per-connection capacity for the outbound WebSocket message queue,
@@ -39,9 +39,9 @@ fn ensure_native_ws_hub(runtime_id : String) -> NativeWebSocketHub {
     Some(hub) => hub
     None => {
       let hub : NativeWebSocketHub = {
-        connection_counter: Ref::new(0),
-        connections: Map::new(),
-        channels: Map::new(),
+        connection_counter: Ref(0),
+        connections: Map([]),
+        channels: Map([]),
       }
       native_ws_hubs.set(runtime_id, hub)
       hub
@@ -111,7 +111,7 @@ fn register_native_ws_connection(
   hub.connections.set(connection_id, {
     outgoing,
     overflow_policy,
-    subscribed_channels: Map::new(),
+    subscribed_channels: Map([]),
   })
   native_ws_connection_hubs.set(connection_id, runtime_id)
 }
@@ -179,16 +179,32 @@ fn enqueue_native_ws_outgoing_to_connection(
   connection : NativeWebSocketConnection,
   message : NativeWebSocketOutbound,
 ) -> Unit {
-  let enqueue_result : Result[Bool, Error] = try? connection.outgoing.try_put(
-    message,
-  )
+  let enqueue_result : Result[Bool, Error] = try
+    connection.outgoing.try_put(message)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match enqueue_result {
     Ok(true) => ()
     Ok(false) =>
       match connection.overflow_policy {
         DropOldest => {
-          ignore(try? connection.outgoing.try_get())
-          ignore(try? connection.outgoing.try_put(message))
+          ignore(
+            try connection.outgoing.try_get() catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            },
+          )
+          ignore(
+            try connection.outgoing.try_put(message) catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            },
+          )
         }
         DropLatest => ()
       }
@@ -217,7 +233,7 @@ fn ws_subscribe(id : String, channel : String) -> Unit {
       match hub.channels.get(channel) {
         Some(members) => members.set(id, ())
         None => {
-          let members : Map[String, Unit] = Map::new()
+          let members : Map[String, Unit] = Map([])
           members.set(id, ())
           hub.channels.set(channel, members)
         }

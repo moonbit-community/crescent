@@ -412,7 +412,7 @@ test "html helper sets text/html content type" {
     res.headers.get("Content-Type"),
     content="Some(\"text/html; charset=utf-8\")",
   )
-  let buf = @buffer.new()
+  let buf = Buffer()
   responder.output(buf)
   assert_eq(buf.contents(), @utf8.encode("<h1>Hello</h1>"))
 }

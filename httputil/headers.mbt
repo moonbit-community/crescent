@@ -174,7 +174,7 @@ pub fn append_token_case_insensitive(
           // Check if token is already present.
           let mut already_present = false
           for part in value.split(",") {
-            if part.trim(chars=" \t").to_string().to_lower() == lower_token {
+            if part.trim(chars=" \t").to_owned().to_lower() == lower_token {
               already_present = true
               break
             }

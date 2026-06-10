@@ -17,10 +17,13 @@ async fn allocate_direct_lifecycle_server() -> @http.Server {
   let addr = @socket.Addr::parse("127.0.0.1:0") catch {
     _ => raise DirectLifecycleSocketBindUnavailable
   }
-  let bind_check : Result[@http.Server, Error] = try? @http.Server::new(
-    addr,
-    reuse_addr=true,
-  )
+  let bind_check : Result[@http.Server, Error] = try
+    @http.Server(addr, reuse_addr=true)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match bind_check {
     Ok(server) => server
     Err(@os_error.OSError(errno, ..)) if errno == 1 =>
@@ -44,17 +47,21 @@ async fn allocate_direct_lifecycle_server() -> @http.Server {
 /// is covered by the App-driven test in root.
 async test "outgoing queue is closed before Close handler fires" {
   let runtime_id = "test-direct-close-order"
-  let close_saw_registered : Ref[Bool?] = Ref::new(None)
-  let close_saw_queue_closed : Ref[Bool?] = Ref::new(None)
+  let close_saw_registered : Ref[Bool?] = Ref(None)
+  let close_saw_queue_closed : Ref[Bool?] = Ref(None)
   let handler : WebSocketHandler = event => {
     match event {
       Close(peer) =>
         match resolve_native_ws_connection(peer.connection_id) {
           Some((_, connection)) => {
             close_saw_registered.val = Some(true)
-            let result : Result[Bool, Error] = try? connection.outgoing.try_put(
-              SendBinary(b""),
-            )
+            let result : Result[Bool, Error] = try
+              connection.outgoing.try_put(SendBinary(b""))
+            catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            }
             close_saw_queue_closed.val = Some(
               match result {
                 Err(_) => true
@@ -76,7 +83,13 @@ async test "outgoing queue is closed before Close handler fires" {
     let port = server.addr.port()
     group.spawn_bg(no_wait=true, allow_failure=true, () => {
       for ;; {
-        let conn_result : Result[(@http.ServerConnection, @socket.Addr), Error] = try? server.accept()
+        let conn_result : Result[(@http.ServerConnection, @socket.Addr), Error] = try
+          server.accept()
+        catch {
+          err => Err(err)
+        } noraise {
+          v => Ok(v)
+        }
         match conn_result {
           Err(_) => break
           Ok((conn, _addr)) =>
@@ -129,9 +142,9 @@ fn test_native_ws_connection(
   overflow_policy : NativeWebSocketOverflowPolicy,
 ) -> NativeWebSocketConnection {
   {
-    outgoing: @async.Queue::new(kind=Blocking(capacity)),
+    outgoing: Queue(kind=Blocking(capacity)),
     overflow_policy,
-    subscribed_channels: Map::new(),
+    subscribed_channels: Map([]),
   }
 }
 
@@ -220,7 +233,7 @@ test "next_native_ws_connection_id increments counter and formats id" {
 test "register_native_ws_connection makes connection resolvable" {
   let runtime_id = "test-register"
   let connection_id = "test-register:1"
-  let outgoing = @async.Queue::new(kind=Blocking(10))
+  let outgoing = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(runtime_id, connection_id, outgoing, DropOldest)
   inspect(
     resolve_native_ws_connection(connection_id) is Some(_),
@@ -234,7 +247,7 @@ test "register_native_ws_connection makes connection resolvable" {
 test "unregister_native_ws_connection makes connection unresolvable" {
   let runtime_id = "test-unregister"
   let connection_id = "test-unregister:1"
-  let outgoing = @async.Queue::new(kind=Blocking(10))
+  let outgoing = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(runtime_id, connection_id, outgoing, DropOldest)
   inspect(connection_is_registered(connection_id), content="true")
   unregister_native_ws_connection(connection_id)
@@ -249,7 +262,7 @@ test "unregister_native_ws_connection makes connection unresolvable" {
 test "unregister_native_ws_connection removes hub when last connection removed" {
   let runtime_id = "test-unregister-hub-removal"
   let connection_id = "test-unregister-hub-removal:1"
-  let outgoing = @async.Queue::new(kind=Blocking(10))
+  let outgoing = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(runtime_id, connection_id, outgoing, DropOldest)
   inspect(runtime_is_registered(runtime_id), content="true")
   unregister_native_ws_connection(connection_id)
@@ -260,7 +273,7 @@ test "unregister_native_ws_connection removes hub when last connection removed" 
 test "ws_subscribe adds connection to channel" {
   let runtime_id = "test-subscribe"
   let connection_id = "test-subscribe:1"
-  let outgoing = @async.Queue::new(kind=Blocking(10))
+  let outgoing = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(runtime_id, connection_id, outgoing, DropOldest)
   ws_subscribe(connection_id, "channel-a")
   let channels = snapshot_native_ws_channels(connection_id)
@@ -274,7 +287,7 @@ test "ws_subscribe adds connection to channel" {
 test "ws_subscribe is idempotent" {
   let runtime_id = "test-subscribe-idempotent"
   let connection_id = "test-subscribe-idempotent:1"
-  let outgoing = @async.Queue::new(kind=Blocking(10))
+  let outgoing = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(runtime_id, connection_id, outgoing, DropOldest)
   ws_subscribe(connection_id, "channel-a")
   ws_subscribe(connection_id, "channel-a")
@@ -288,7 +301,7 @@ test "ws_subscribe is idempotent" {
 test "ws_unsubscribe removes connection from channel" {
   let runtime_id = "test-unsubscribe"
   let connection_id = "test-unsubscribe:1"
-  let outgoing = @async.Queue::new(kind=Blocking(10))
+  let outgoing = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(runtime_id, connection_id, outgoing, DropOldest)
   ws_subscribe(connection_id, "channel-a")
   ws_unsubscribe(connection_id, "channel-a")
@@ -302,7 +315,7 @@ test "ws_unsubscribe removes connection from channel" {
 test "ws_unsubscribe on non-subscribed channel is safe" {
   let runtime_id = "test-unsubscribe-safe"
   let connection_id = "test-unsubscribe-safe:1"
-  let outgoing = @async.Queue::new(kind=Blocking(10))
+  let outgoing = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(runtime_id, connection_id, outgoing, DropOldest)
   ws_unsubscribe(connection_id, "never-subscribed")
   let channels = snapshot_native_ws_channels(connection_id)
@@ -374,8 +387,8 @@ test "native_ws_chunk_exceeds_limit detects exceeding limit" {
 ///|
 test "cleanup_runtime removes all connections for runtime" {
   let runtime_id = "test-cleanup-runtime"
-  let outgoing1 = @async.Queue::new(kind=Blocking(10))
-  let outgoing2 = @async.Queue::new(kind=Blocking(10))
+  let outgoing1 = @async.Queue(kind=Blocking(10))
+  let outgoing2 = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(
     runtime_id,
     "test-cleanup-runtime:1",
@@ -407,8 +420,8 @@ test "cleanup_runtime is safe on nonexistent runtime" {
 ///|
 test "multiple connections share same hub channel" {
   let runtime_id = "test-shared-channel"
-  let outgoing1 = @async.Queue::new(kind=Blocking(10))
-  let outgoing2 = @async.Queue::new(kind=Blocking(10))
+  let outgoing1 = @async.Queue(kind=Blocking(10))
+  let outgoing2 = @async.Queue(kind=Blocking(10))
   register_native_ws_connection(
     runtime_id,
     "test-shared-channel:1",

@@ -259,12 +259,7 @@ pub impl BodyReader for Array[Byte] with fn from_request(req : HttpRequest) -> A
 
 ///|
 test "read_body" {
-  let req = HttpRequest(
-    Post,
-    "/",
-    Map::new(),
-    raw_body=b"{\"Hello\":\"World!\"}",
-  )
+  let req = HttpRequest(Post, "/", Map([]), raw_body=b"{\"Hello\":\"World!\"}")
   let text : String = req.body()
   let json : Json = req.body()
   inspect(

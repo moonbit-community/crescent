@@ -19,7 +19,7 @@ fn hex_digit(b : Byte) -> Int? {
 /// percent-encoding for any non-ASCII byte, so the view is encoded back to
 /// UTF-8 bytes once before decoding.
 pub fn url_decode_str(view : StringView) -> String {
-  url_decode(@utf8.encode(view.to_string())[:])
+  url_decode(@utf8.encode(view.to_owned())[:])
 }
 
 ///|
@@ -73,7 +73,7 @@ pub fn parse_form_data_str(view : StringView) -> Map[String, String] {
 ///|
 /// Parses URL-encoded form data (e.g. `key=value&foo=bar`) into a map of key-value pairs.
 pub fn parse_form_data(bytes : BytesView) -> Map[String, String] {
-  let res = Map::new()
+  let res = Map([])
   if bytes.length() == 0 {
     return res
   }
@@ -133,7 +133,7 @@ fn is_unreserved(b : Byte) -> Bool {
 /// Percent-encodes a string for use in URLs, escaping all characters except unreserved ones.
 pub fn url_encode(s : String) -> String {
   let bytes = @utf8.encode(s)
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in 0..<bytes.length() {
     let b = bytes[i]
     if is_unreserved(b) {
@@ -162,7 +162,7 @@ pub fn url_encode(s : String) -> String {
 ///|
 /// Encodes a map of key-value pairs into a URL-encoded form string (e.g. `key=value&foo=bar`).
 pub fn form_encode(map : Map[String, String]) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut first = true
   map.each((k, v) => {
     if !first {

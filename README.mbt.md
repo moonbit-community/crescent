@@ -465,7 +465,7 @@ test "static routes are flagged" {
   app.ws("/chat", fn(event) {
     match event {
       Open(peer) => {
-        println("Connected: \{peer.to_string()}")
+        println("Connected: \{peer.to_owned()}")
         peer.subscribe("chat-room")
       }
       Message(peer, Text(msg)) =>
@@ -473,7 +473,7 @@ test "static routes are flagged" {
       Message(peer, Binary(data)) =>
         peer.binary(data)               // echo binary back
       Close(peer) =>
-        println("Disconnected: \{peer.to_string()}")
+        println("Disconnected: \{peer.to_owned()}")
     }
   })
 ```
@@ -621,7 +621,7 @@ Methods: `@fetch.get`, `@fetch.post`, `@fetch.put`, `@fetch.patch`,
 
 ```moonbit nocheck
   let addr = @socket.Addr::parse("0.0.0.0:4000")
-  let server = @http.Server::new(addr, reuse_addr=true)
+  let server = Server(addr, reuse_addr=true)
   app.serve_on(server)
 ```
 
@@ -781,7 +781,7 @@ test "require_param raises on missing" {
     res: HttpResponse(status_code=OK),
     params: {},
   }
-  let result = try? event.require_param_int("id")
+  let result = try event.require_param_int("id") catch {err => Err(err)} noraise { v => Ok(v)}
   assert_true(result is Err(_))
 }
 ```

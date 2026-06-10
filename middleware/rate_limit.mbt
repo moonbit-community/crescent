@@ -10,8 +10,8 @@ pub fn rate_limit(
   requests_per_window~ : Int,
   window_ms~ : Int,
 ) -> @crescent.Middleware {
-  let window_start : Ref[Int64] = Ref::new(0L)
-  let request_count : Ref[Int] = Ref::new(0)
+  let window_start : Ref[Int64] = Ref(0L)
+  let request_count : Ref[Int] = Ref(0)
   (_event, next) => {
     let now = @async.now()
     // Reset window if expired

@@ -9,10 +9,13 @@ async fn allocate_test_server() -> @http.Server {
   let addr = @socket.Addr::parse("127.0.0.1:0") catch {
     _ => raise SocketBindUnavailable
   }
-  let bind_check : Result[@http.Server, Error] = try? @http.Server::new(
-    addr,
-    reuse_addr=true,
-  )
+  let bind_check : Result[@http.Server, Error] = try
+    @http.Server(addr, reuse_addr=true)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match bind_check {
     Ok(server) => server
     Err(@os_error.OSError(errno, ..)) if errno == 1 =>
@@ -58,7 +61,7 @@ async fn issue_request(
   path : String,
   headers? : Map[String, String],
 ) -> (@http.Response, Bytes) {
-  let client = @http.Client::new("http://127.0.0.1:\{port}")
+  let client = @http.Client("http://127.0.0.1:\{port}")
   defer client.close()
   client.request(meth, path, extra_headers=headers.unwrap_or({}))
   let response = client.end_request()
@@ -68,7 +71,11 @@ async fn issue_request(
 
 ///|
 async fn try_remove(path : String) -> Unit noraise {
-  let r : Result[Unit, Error] = try? @fs.remove(path)
+  let r : Result[Unit, Error] = try @fs.remove(path) catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   ignore(r)
 }
 
@@ -108,10 +115,13 @@ async test "static_file blocks symlink escaping root" {
   // Remove any pre-existing symlink from prior test runs
   try_remove(link_path)
   // Skip test if we can't create the symlink (e.g., no write perms)
-  let link_created : Result[Unit, Error] = try? @fs.symlink(
-    target="/etc/passwd",
-    link_path,
-  )
+  let link_created : Result[Unit, Error] = try
+    @fs.symlink(target="/etc/passwd", link_path)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   guard link_created is Ok(_) else { return }
   let provider = @static_file.StaticFileProvider(path="static_file/testdata")
   // The symlink exists inside the root directory but points outside;

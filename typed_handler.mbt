@@ -42,7 +42,7 @@ async test "wrap_error_handler passes through success" {
     params: {},
   }
   let result = handler(event)
-  let buf = @buffer.new()
+  let buf = Buffer()
   result.output(buf)
   assert_eq(buf.contents(), @utf8.encode("ok"))
 }
@@ -60,7 +60,7 @@ async test "wrap_error_handler catches HttpError" {
   let result = handler(event)
   result.options(event.res)
   assert_eq(event.res.status_code, BadRequest)
-  let buf = @buffer.new()
+  let buf = Buffer()
   result.output(buf)
   let body = @utf8.decode(buf.contents())
   assert_true(body.contains("name is required"))
@@ -107,7 +107,7 @@ async test "wrap_error_handler catches Failure as 500 with generic message" {
   let result = handler(event)
   result.options(event.res)
   assert_eq(event.res.status_code, InternalServerError)
-  let buf = @buffer.new()
+  let buf = Buffer()
   result.output(buf)
   let body = @utf8.decode(buf.contents())
   // Must NOT leak internal error details to clients

@@ -133,112 +133,168 @@ test "NativeServeOptions accepts zero websocket_max_message_bytes" {
 
 ///|
 test "NativeServeOptions rejects zero max_connections" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    max_connections=0,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(max_connections=0)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects negative max_connections" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    max_connections=-1,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(max_connections=-1)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects negative max_request_body_bytes" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    max_request_body_bytes=-1,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(max_request_body_bytes=-1)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects zero request_body_read_timeout_ms" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    request_body_read_timeout_ms=0,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(request_body_read_timeout_ms=0)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects negative request_body_read_timeout_ms" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    request_body_read_timeout_ms=-1,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(request_body_read_timeout_ms=-1)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects zero handler_timeout_ms" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    handler_timeout_ms=0,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(handler_timeout_ms=0)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects negative handler_timeout_ms" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    handler_timeout_ms=-1,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(handler_timeout_ms=-1)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects zero shutdown_timeout_ms" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    shutdown_timeout_ms=0,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(shutdown_timeout_ms=0)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects negative shutdown_timeout_ms" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    shutdown_timeout_ms=-1,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(shutdown_timeout_ms=-1)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects negative websocket_max_message_bytes" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    websocket_max_message_bytes=-1,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(websocket_max_message_bytes=-1)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects zero websocket_outgoing_queue_capacity" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    websocket_outgoing_queue_capacity=0,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(websocket_outgoing_queue_capacity=0)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects negative websocket_outgoing_queue_capacity" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    websocket_outgoing_queue_capacity=-1,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(websocket_outgoing_queue_capacity=-1)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects zero websocket_read_timeout_ms" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    websocket_read_timeout_ms=0,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(websocket_read_timeout_ms=0)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }
 
 ///|
 test "NativeServeOptions rejects negative websocket_read_timeout_ms" {
-  let result : Result[NativeServeOptions, Error] = try? NativeServeOptions(
-    websocket_read_timeout_ms=-1,
-  )
+  let result : Result[NativeServeOptions, Error] = try
+    NativeServeOptions(websocket_read_timeout_ms=-1)
+  catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   inspect(result is Err(_), content="true")
 }

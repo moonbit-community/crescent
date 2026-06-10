@@ -55,8 +55,16 @@ async fn resolve_within_root(
   root : String,
   candidate : String,
 ) -> String? noraise {
-  let root_real = try? @fs.realpath(root)
-  let candidate_real = try? @fs.realpath(candidate)
+  let root_real = try @fs.realpath(root) catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
+  let candidate_real = try @fs.realpath(candidate) catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   match (root_real, candidate_real) {
     (Ok(root_path), Ok(cand_path)) =>
       // Candidate must be equal to root, or under root with a separator.
@@ -120,7 +128,17 @@ pub impl ServeStaticProvider for StaticFileProvider with fn get_meta(
       match open_static_asset(path) {
         Some(file) => {
           defer file.close()
-          match (try? file.size(), try? file.mtime()) {
+          let file_size = try file.size() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+          let file_mtime = try file.mtime() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+          match (file_size, file_mtime) {
             (Ok(size), Ok((mtime_sec, mtime_nsec))) =>
               Some(
                 @crescent.StaticAssetMeta(
@@ -152,7 +170,17 @@ pub impl ServeStaticProvider for StaticFileProvider with fn get_contents(
       match open_static_asset(path) {
         Some(file) => {
           defer file.close()
-          let headers = match (try? file.size(), try? file.mtime()) {
+          let file_size = try file.size() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+          let file_mtime = try file.mtime() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+          let headers = match (file_size, file_mtime) {
             (Ok(size), Ok((mtime_sec, mtime_nsec))) => {
               let headers : Map[String, String] = {}
               headers.set("Content-Length", size.to_string())

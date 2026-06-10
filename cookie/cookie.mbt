@@ -63,7 +63,7 @@ pub fn CookieItem::CookieItem(
 ///|
 fn sanitize_cookie_value(s : String) -> String {
   if s.contains("\r") || s.contains("\n") || s.contains(";") {
-    let buf = StringBuilder::new()
+    let buf = StringBuilder()
     for c in s {
       if c != '\r' && c != '\n' && c != ';' {
         buf.write_char(c)
@@ -106,7 +106,7 @@ pub impl Show for CookieItem with fn output(self, logger) -> Unit {
 
 ///|
 pub impl Show for CookieItem with fn to_string(self : CookieItem) -> String {
-  let buf = @buffer.new()
+  let buf = Buffer()
   self.output(buf)
   buf.to_string()
 }
@@ -128,11 +128,11 @@ pub fn parse_cookie(cookie : StringView) -> Map[String, CookieItem] {
     }
   }
 
-  let res = Map::new()
+  let res = Map([])
   let mut last_cookie_item : (String, CookieItem)? = None
   fn on_key_value(key : StringView, value : StringView) -> Unit {
-    let key = key.to_string()
-    let value = dequote(value).to_string()
+    let key = key.to_owned()
+    let value = dequote(value).to_owned()
     if last_cookie_item is Some((name, item)) {
       let new_item = lexmatch key with longest {
         "(?i:path)" => { ..item, path: Some(value) }

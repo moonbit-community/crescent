@@ -49,7 +49,7 @@ pub fn HttpResponse::body(
   match body.output_bytes() {
     Some(bytes) => self.raw_body = bytes
     None => {
-      let buf = @buffer.new()
+      let buf = Buffer()
       body.output(buf)
       self.raw_body = buf.to_bytes()
     }

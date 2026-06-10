@@ -91,7 +91,7 @@ async fn read_request_body_async(
         }
         _ => ()
       }
-      let buffer = @buffer.new()
+      let buffer = Buffer()
       let mut total = 0
       for ;; {
         let next_chunk_size = next_native_request_body_chunk_size(limit, total)

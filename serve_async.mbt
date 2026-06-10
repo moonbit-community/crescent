@@ -36,7 +36,7 @@ fn copy_async_headers(headers : Map[String, String]) -> Map[String, String] {
 }
 
 ///|
-let ws_serve_runtime_counter : Ref[Int] = Ref::new(0)
+let ws_serve_runtime_counter : Ref[Int] = Ref(0)
 
 ///|
 fn next_ws_serve_runtime_id(app : App) -> String {
@@ -317,7 +317,7 @@ async fn App::handle_request(
         // Copy StringView params into owned Strings: the peer outlives the
         // request buffer, so borrowed views would dangle.
         let ws_params : Map[String, String] = {}
-        route_params.each((k, v) => ws_params.set(k, v.to_string()))
+        route_params.each((k, v) => ws_params.set(k, v.to_owned()))
         @ws.handle_route_async(
           ws_runtime_id, request, conn, ws_handler, ws_params, websocket_max_message_bytes,
           websocket_outgoing_queue_capacity, websocket_overflow_policy, websocket_read_timeout_ms,
@@ -449,7 +449,13 @@ async fn run_native_server(
 
 ///|
 async fn wait_for_shutdown_signal(shutdown : @async.Queue[Unit]) -> Unit {
-  ignore(try? shutdown.get())
+  ignore(
+    try shutdown.get() catch {
+      err => Err(err)
+    } noraise {
+      v => Ok(v)
+    },
+  )
 }
 
 ///|
@@ -499,13 +505,11 @@ pub async fn App::serve_on(
           // 4. Inner group waits for handler tasks to finish current requests.
           // 5. Hard timeout (started AFTER shutdown) cancels everything.
           let sem : @async.Semaphore? = match options.max_connections {
-            Some(n) => Some(@async.Semaphore::new(n))
+            Some(n) => Some(Semaphore(n))
             None => None
           }
-          let draining : Ref[Bool] = Ref::new(false)
-          let handlers_drained : @async.Queue[Unit] = @async.Queue::new(
-            kind=Unbounded,
-          )
+          let draining : Ref[Bool] = Ref(false)
+          let handlers_drained : @async.Queue[Unit] = Queue(kind=Unbounded)
           @async.with_task_group(outer => {
             // Inner group: accept loop + handler tasks
             outer.spawn_bg(no_wait=true, allow_failure=true, () => {
@@ -516,7 +520,11 @@ pub async fn App::serve_on(
                   let conn_result : Result[
                     (@http.ServerConnection, @socket.Addr),
                     Error,
-                  ] = try? server.accept()
+                  ] = try server.accept() catch {
+                    err => Err(err)
+                  } noraise {
+                    v => Ok(v)
+                  }
                   match conn_result {
                     Err(_) => break // server closed, stop accepting
                     Ok((conn, _addr)) => {
@@ -531,7 +539,13 @@ pub async fn App::serve_on(
                         })
                         // Keep-alive loop: check draining after each request
                         for ;; {
-                          let req_result : Result[@http.Request, Error] = try? conn.read_request()
+                          let req_result : Result[@http.Request, Error] = try
+                            conn.read_request()
+                          catch {
+                            err => Err(err)
+                          } noraise {
+                            v => Ok(v)
+                          }
                           match req_result {
                             Ok(request) => {
                               let body_reader : &@io.Reader = conn
@@ -568,7 +582,15 @@ pub async fn App::serve_on(
             server.close()
             // Timeout starts NOW (after shutdown signal, not from boot)
             @async.any([
-              () => ignore(try? handlers_drained.get()),
+              () => {
+                ignore(
+                  try handlers_drained.get() catch {
+                    err => Err(err)
+                  } noraise {
+                    v => Ok(v)
+                  },
+                )
+              },
               () => @async.sleep(timeout_ms),
             ])
             // Outer main returns → outer group cancels inner (no_wait=true)

@@ -268,9 +268,13 @@ later. This turns a subtle decoding bug into a loud parse failure:
 ```mbt check
 ///|
 test "invalid percent-encoding is rejected" {
-  let bad : Result[@uri.Uri, @uri.ParseError] = try? @uri.Uri(
+  let bad : Result[@uri.Uri, @uri.ParseError] = try @uri.Uri(
     "http://example.com/path%GG",
-  )
+  ) catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(bad is Err(_))
 }
 ```
@@ -292,19 +296,27 @@ failure, which is useful for error reporting).
 | `InvalidSchemeOrSegment(rest)` | Ambiguous failure in the scheme-or-segment-nz-nc prefix. |
 | `Invalid(rest)` | Trailing garbage after an otherwise successful parse. |
 
-Wrap calls in `try?` to convert raises into `Result`:
+Wrap calls in `try..catch..noraise` to convert raises into `Result`:
 
 ```mbt check
 ///|
 test "ParseError surfaces as a Result" {
-  let ok : Result[@uri.Uri, @uri.ParseError] = try? @uri.Uri(
+  let ok : Result[@uri.Uri, @uri.ParseError] = try @uri.Uri(
     "https://example.com/",
-  )
+  ) catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(ok is Ok(_))
 
-  let bad : Result[@uri.Uri, @uri.ParseError] = try? @uri.Uri(
+  let bad : Result[@uri.Uri, @uri.ParseError] = try @uri.Uri(
     "http://example.com/path%GG",
-  )
+  ) catch {
+    err => Err(err)
+  } noraise {
+    v => Ok(v)
+  }
   assert_true(bad is Err(_))
 }
 ```

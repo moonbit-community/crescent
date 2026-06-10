@@ -32,22 +32,41 @@ async fn recv_native_ws_message(
 ) -> @async_websocket.Message? {
   match read_timeout_ms {
     Some(read_timeout_ms) =>
-      match @async.with_timeout_opt(read_timeout_ms, () => try? ws.recv()) {
+      match
+        @async.with_timeout_opt(read_timeout_ms, () => {
+          try ws.recv() catch {
+            err => Err(err)
+          } noraise {
+            v => Ok(v)
+          }
+        }) {
         Some(Ok(message)) => Some(message)
         Some(Err(@async_websocket.ConnectionClosed(_, _))) => None
         Some(Err(err)) => raise err
         None => {
           ignore(
-            try? ws.send_close(
-              code=GoingAway,
-              reason=NATIVE_WS_READ_TIMEOUT_REASON,
-            ),
+            try
+              ws.send_close(
+                code=GoingAway,
+                reason=NATIVE_WS_READ_TIMEOUT_REASON,
+              )
+            catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            },
           )
           None
         }
       }
     None => {
-      let message_result : Result[@async_websocket.Message, Error] = try? ws.recv()
+      let message_result : Result[@async_websocket.Message, Error] = try
+        ws.recv()
+      catch {
+        err => Err(err)
+      } noraise {
+        v => Ok(v)
+      }
       match message_result {
         Ok(message) => Some(message)
         Err(@async_websocket.ConnectionClosed(_, _)) => None
@@ -107,7 +126,7 @@ async fn read_native_ws_message_contents(
         },
       )
     Some(limit) => {
-      let buffer = @buffer.new()
+      let buffer = Buffer()
       let mut total = 0
       for ;; {
         let next_chunk_size = next_native_ws_message_chunk_size(limit, total)
@@ -116,10 +135,16 @@ async fn read_native_ws_message_contents(
         }
         if native_ws_chunk_exceeds_limit(limit, total, chunk.length()) {
           ignore(
-            try? ws.send_close(
-              code=MessageTooBig,
-              reason=NATIVE_WS_MESSAGE_TOO_BIG_REASON,
-            ),
+            try
+              ws.send_close(
+                code=MessageTooBig,
+                reason=NATIVE_WS_MESSAGE_TOO_BIG_REASON,
+              )
+            catch {
+              err => Err(err)
+            } noraise {
+              v => Ok(v)
+            },
           )
           return None
         }
@@ -133,9 +158,15 @@ async fn read_native_ws_message_contents(
 ///|
 async fn send_native_ws_shutdown_close(ws : @async_websocket.Conn) -> Unit {
   ignore(
-    try? @async.protect_from_cancel(resume_on_cancel=true, () => {
-      ws.send_close(code=GoingAway, reason=NATIVE_WS_SERVER_SHUTDOWN_REASON)
-    }),
+    try
+      @async.protect_from_cancel(resume_on_cancel=true, () => {
+        ws.send_close(code=GoingAway, reason=NATIVE_WS_SERVER_SHUTDOWN_REASON)
+      })
+    catch {
+      err => Err(err)
+    } noraise {
+      v => Ok(v)
+    },
   )
 }
 
@@ -149,7 +180,7 @@ fn normalize_native_websocket_request_headers(
       "connection" =>
         value.split(",").map(token => token.trim()).to_array().join(", ")
       "upgrade" | "sec-websocket-version" | "sec-websocket-key" =>
-        value.trim().to_string()
+        value.trim().to_owned()
       _ => value
     }
     normalized.set(key, normalized_value)
@@ -263,7 +294,7 @@ pub async fn handle_route_async(
   let connection_id = next_native_ws_connection_id(runtime_id, hub)
   // Bounded outbound queue. Blocking(cap) means publishers either wait for
   // room or invoke overflow_policy (DropOldest/DropLatest) via ws_publish.
-  let outgoing = @async.Queue::new(kind=Blocking(outgoing_queue_capacity))
+  let outgoing = @async.Queue(kind=Blocking(outgoing_queue_capacity))
   register_native_ws_connection(
     runtime_id, connection_id, outgoing, overflow_policy,
   )
