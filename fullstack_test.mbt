@@ -122,7 +122,7 @@ async test "full-stack: list todos returns json array" {
   let res = client.get("/api/todos")
   assert_eq(res.status, OK)
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr,
     content="Some(\"application/json; charset=utf-8\")",
   )
   let todos : Array[Todo] = res.body_json()

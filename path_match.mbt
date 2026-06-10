@@ -76,28 +76,40 @@ fn App::has_route_for_method(
 test "has_route_for_method returns true for registered route" {
   let app = App()
   app.get("/users", _ => "users")
-  inspect(app.has_route_for_method("GET", "/users"), content="true")
+  inspect(
+    app.has_route_for_method("GET", "/users") |> @debug.to_repr,
+    content="true",
+  )
 }
 
 ///|
 test "has_route_for_method returns false for missing route" {
   let app = App()
   app.get("/users", _ => "users")
-  inspect(app.has_route_for_method("GET", "/posts"), content="false")
+  inspect(
+    app.has_route_for_method("GET", "/posts") |> @debug.to_repr,
+    content="false",
+  )
 }
 
 ///|
 test "has_route_for_method returns false for wrong method" {
   let app = App()
   app.get("/users", _ => "users")
-  inspect(app.has_route_for_method("DELETE", "/users"), content="false")
+  inspect(
+    app.has_route_for_method("DELETE", "/users") |> @debug.to_repr,
+    content="false",
+  )
 }
 
 ///|
 test "has_route_for_method matches dynamic route" {
   let app = App()
   app.get("/users/:id", _ => "user")
-  inspect(app.has_route_for_method("GET", "/users/456"), content="true")
+  inspect(
+    app.has_route_for_method("GET", "/users/456") |> @debug.to_repr,
+    content="true",
+  )
 }
 
 ///|
@@ -137,7 +149,7 @@ test "allowed_methods includes HEAD for GET route" {
   let app = App()
   app.get("/test", _ => "ok")
   let methods = app.allowed_methods("/test", false)
-  inspect(methods, content="[\"GET\", \"HEAD\"]")
+  inspect(@debug.to_repr(methods), content="[\"GET\", \"HEAD\"]")
 }
 
 ///|
@@ -145,7 +157,7 @@ test "allowed_methods with implicit OPTIONS" {
   let app = App()
   app.get("/test", _ => "ok")
   let methods = app.allowed_methods("/test", true)
-  inspect(methods, content="[\"GET\", \"HEAD\", \"OPTIONS\"]")
+  inspect(@debug.to_repr(methods), content="[\"GET\", \"HEAD\", \"OPTIONS\"]")
 }
 
 ///|
@@ -155,7 +167,10 @@ test "allowed_methods multiple methods on same path" {
   app.post("/users", _ => "create")
   app.delete("/users", _ => "remove")
   let methods = app.allowed_methods("/users", false)
-  inspect(methods, content="[\"GET\", \"HEAD\", \"POST\", \"DELETE\"]")
+  inspect(
+    @debug.to_repr(methods),
+    content="[\"GET\", \"HEAD\", \"POST\", \"DELETE\"]",
+  )
 }
 
 ///|
@@ -164,7 +179,7 @@ test "allowed_methods with explicit OPTIONS handler" {
   app.get("/test", _ => "ok")
   app.options_raw("/test", _ => "opts")
   let methods = app.allowed_methods("/test", false)
-  inspect(methods, content="[\"GET\", \"HEAD\", \"OPTIONS\"]")
+  inspect(@debug.to_repr(methods), content="[\"GET\", \"HEAD\", \"OPTIONS\"]")
 }
 
 ///|
@@ -172,14 +187,14 @@ test "allowed_methods returns empty for unknown path" {
   let app = App()
   app.get("/test", _ => "ok")
   let methods = app.allowed_methods("/unknown", false)
-  inspect(methods, content="[]")
+  inspect(@debug.to_repr(methods), content="[]")
 }
 
 ///|
 test "allowed_methods no implicit OPTIONS when empty" {
   let app = App()
   let methods = app.allowed_methods("/nothing", true)
-  inspect(methods, content="[]")
+  inspect(@debug.to_repr(methods), content="[]")
 }
 
 ///|

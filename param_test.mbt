@@ -5,8 +5,11 @@ test "param returns string value" {
     res: HttpResponse(status_code=OK),
     params: { "id": "42" },
   }
-  inspect(event.param("id"), content="Some(\"42\")")
-  inspect(event.param("missing"), content="None")
+  inspect(
+    event.param("id").map(s => s.to_owned()) |> @debug.to_repr,
+    content="Some(\"42\")",
+  )
+  inspect(event.param("missing") |> @debug.to_repr, content="None")
 }
 
 ///|
@@ -16,8 +19,8 @@ test "param_int parses integer" {
     res: HttpResponse(status_code=OK),
     params: { "id": "123" },
   }
-  inspect(event.param_int("id"), content="Some(123)")
-  inspect(event.param_int("missing"), content="None")
+  inspect(event.param_int("id") |> @debug.to_repr, content="Some(123)")
+  inspect(event.param_int("missing") |> @debug.to_repr, content="None")
 }
 
 ///|
@@ -27,7 +30,7 @@ test "param_int returns none for non-integer" {
     res: HttpResponse(status_code=OK),
     params: { "id": "abc" },
   }
-  inspect(event.param_int("id"), content="None")
+  inspect(event.param_int("id") |> @debug.to_repr, content="None")
 }
 
 ///|

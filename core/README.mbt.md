@@ -217,10 +217,10 @@ test "fluent response building" {
     .body(@core.html("<h1>Hello</h1>"))
   assert_eq(res.status_code, OK)
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr(),
     content="Some(\"text/html; charset=utf-8\")",
   )
-  inspect(res.headers.get("X-Request-Id"), content="Some(\"abc-123\")")
+  inspect(res.headers.get("X-Request-Id") |> @debug.to_repr(), content="Some(\"abc-123\")")
 }
 ```
 
@@ -234,7 +234,7 @@ Both set `Content-Type: application/json; charset=utf-8`:
 test "json response sets content type and body" {
   let res = @core.HttpResponse::ok().json(({ "status": "ok" } : Json))
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr(),
     content="Some(\"application/json; charset=utf-8\")",
   )
 }
@@ -409,7 +409,7 @@ test "html helper sets text/html content type" {
   let responder = @core.html("<h1>Hello</h1>")
   responder.options(res)
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr(),
     content="Some(\"text/html; charset=utf-8\")",
   )
   let buf = Buffer()

@@ -1,6 +1,7 @@
 import {
   "bobzhang/crescent",
   "moonbitlang/core/json",
+  "moonbitlang/core/debug",
   "moonbitlang/core/encoding/utf8",
 }
 

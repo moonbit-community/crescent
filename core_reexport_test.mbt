@@ -37,7 +37,7 @@ test "re-export: Responder trait" {
   let r : &@crescent.Responder = "test"
   r.options(res)
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr,
     content="Some(\"text/plain; charset=utf-8\")",
   )
 }

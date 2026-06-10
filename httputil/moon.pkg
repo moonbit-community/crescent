@@ -2,6 +2,7 @@ import {
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/strconv",
   "moonbitlang/core/string",
+  "moonbitlang/core/debug",
 }
 
 warnings = "+74"

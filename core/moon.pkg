@@ -6,6 +6,7 @@ import {
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/strconv",
   "moonbitlang/core/string",
+  "moonbitlang/core/debug",
 }
 
 warnings = "+missing_doc+unnecessary_annotation"

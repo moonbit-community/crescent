@@ -15,7 +15,7 @@ test "error helper creates json body" {
   let res = HttpResponse::error(BadRequest, "Invalid input")
   inspect(res.status_code, content="BadRequest")
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr,
     content="Some(\"application/json; charset=utf-8\")",
   )
 }
@@ -23,14 +23,17 @@ test "error helper creates json body" {
 ///|
 test "fluent header" {
   let res = HttpResponse::ok().header("X-Custom", "value")
-  inspect(res.headers.get("X-Custom"), content="Some(\"value\")")
+  inspect(
+    res.headers.get("X-Custom") |> @debug.to_repr,
+    content="Some(\"value\")",
+  )
 }
 
 ///|
 test "body() sets Content-Type from responder" {
   let res = HttpResponse::ok().body(html("<h1>Hi</h1>"))
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr,
     content="Some(\"text/html; charset=utf-8\")",
   )
 }
@@ -54,7 +57,7 @@ test "header() is case-insensitive" {
 test "json() sets Content-Type" {
   let res = HttpResponse::ok().json(({ "a": 1 } : Json))
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr,
     content="Some(\"application/json; charset=utf-8\")",
   )
 }

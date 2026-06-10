@@ -6,6 +6,7 @@ import {
   "moonbitlang/core/encoding/utf8",
   "bobzhang/crescent",
   "bobzhang/crescent/httputil",
+  "moonbitlang/core/debug",
 }
 
 warnings = "-29+74"

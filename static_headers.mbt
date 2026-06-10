@@ -40,20 +40,47 @@ fn parse_accept_encoding_token(token : StringView) -> String? {
 
 ///|
 test "parse_accept_encoding_token strips whitespace and lowercases" {
-  inspect(parse_accept_encoding_token("gzip"), content="Some(\"gzip\")")
-  inspect(parse_accept_encoding_token("  gzip  "), content="Some(\"gzip\")")
-  inspect(parse_accept_encoding_token("gzip;q=0.8"), content="Some(\"gzip\")")
-  inspect(parse_accept_encoding_token("BR"), content="Some(\"br\")")
+  inspect(
+    @debug.to_repr(parse_accept_encoding_token("gzip")),
+    content="Some(\"gzip\")",
+  )
+  inspect(
+    @debug.to_repr(parse_accept_encoding_token("  gzip  ")),
+    content="Some(\"gzip\")",
+  )
+  inspect(
+    @debug.to_repr(parse_accept_encoding_token("gzip;q=0.8")),
+    content="Some(\"gzip\")",
+  )
+  inspect(
+    @debug.to_repr(parse_accept_encoding_token("BR")),
+    content="Some(\"br\")",
+  )
 }
 
 ///|
 test "parse_accept_encoding_token rejects q=0" {
-  inspect(parse_accept_encoding_token("gzip;q=0"), content="None")
-  inspect(parse_accept_encoding_token("gzip; q=0.0"), content="None")
-  inspect(parse_accept_encoding_token("br;q=0.00"), content="None")
+  inspect(
+    parse_accept_encoding_token("gzip;q=0") |> @debug.to_repr,
+    content="None",
+  )
+  inspect(
+    parse_accept_encoding_token("gzip; q=0.0") |> @debug.to_repr,
+    content="None",
+  )
+  inspect(
+    parse_accept_encoding_token("br;q=0.00") |> @debug.to_repr,
+    content="None",
+  )
   // Non-zero q-values are accepted
-  inspect(parse_accept_encoding_token("gzip;q=0.5"), content="Some(\"gzip\")")
-  inspect(parse_accept_encoding_token("gzip;q=1.0"), content="Some(\"gzip\")")
+  inspect(
+    parse_accept_encoding_token("gzip;q=0.5") |> @debug.to_repr,
+    content="Some(\"gzip\")",
+  )
+  inspect(
+    parse_accept_encoding_token("gzip;q=1.0") |> @debug.to_repr,
+    content="Some(\"gzip\")",
+  )
 }
 
 ///|

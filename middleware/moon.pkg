@@ -2,6 +2,7 @@ import {
   "bobzhang/crescent",
   "bobzhang/crescent/httputil",
   "moonbitlang/async",
+  "moonbitlang/core/debug",
 }
 
 import {

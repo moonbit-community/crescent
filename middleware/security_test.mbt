@@ -6,19 +6,31 @@ async test "security_headers sets base headers by default" {
   let client = @test_client.TestClient(app)
   let res = client.get("/test")
   inspect(
-    res.headers.get("X-Content-Type-Options"),
+    @debug.to_repr(res.headers.get("X-Content-Type-Options")),
     content="Some(\"nosniff\")",
   )
-  inspect(res.headers.get("X-Frame-Options"), content="Some(\"DENY\")")
-  inspect(res.headers.get("X-XSS-Protection"), content="Some(\"0\")")
   inspect(
-    res.headers.get("Referrer-Policy"),
+    @debug.to_repr(res.headers.get("X-Frame-Options")),
+    content="Some(\"DENY\")",
+  )
+  inspect(
+    @debug.to_repr(res.headers.get("X-XSS-Protection")),
+    content="Some(\"0\")",
+  )
+  inspect(
+    @debug.to_repr(res.headers.get("Referrer-Policy")),
     content="Some(\"strict-origin-when-cross-origin\")",
   )
   // Policy headers are opt-in, disabled by default
-  inspect(res.headers.get("Strict-Transport-Security"), content="None")
-  inspect(res.headers.get("Content-Security-Policy"), content="None")
-  inspect(res.headers.get("Permissions-Policy"), content="None")
+  inspect(
+    @debug.to_repr(res.headers.get("Strict-Transport-Security")),
+    content="None",
+  )
+  inspect(
+    @debug.to_repr(res.headers.get("Content-Security-Policy")),
+    content="None",
+  )
+  inspect(@debug.to_repr(res.headers.get("Permissions-Policy")), content="None")
 }
 
 ///|
@@ -35,15 +47,15 @@ async test "security_headers with opt-in policy headers" {
   let client = @test_client.TestClient(app)
   let res = client.get("/test")
   inspect(
-    res.headers.get("Strict-Transport-Security"),
+    @debug.to_repr(res.headers.get("Strict-Transport-Security")),
     content="Some(\"max-age=3600\")",
   )
   inspect(
-    res.headers.get("Content-Security-Policy"),
+    @debug.to_repr(res.headers.get("Content-Security-Policy")),
     content="Some(\"default-src 'self'; script-src 'self'\")",
   )
   inspect(
-    res.headers.get("Permissions-Policy"),
+    @debug.to_repr(res.headers.get("Permissions-Policy")),
     content="Some(\"camera=(), microphone=()\")",
   )
 }
@@ -63,10 +75,13 @@ async test "security_headers preserves handler-set headers" {
   let res = client.get("/test")
   // Per-route values must NOT be overwritten
   inspect(
-    res.headers.get("Content-Security-Policy"),
+    @debug.to_repr(res.headers.get("Content-Security-Policy")),
     content="Some(\"default-src 'none'\")",
   )
-  inspect(res.headers.get("X-Frame-Options"), content="Some(\"SAMEORIGIN\")")
+  inspect(
+    @debug.to_repr(res.headers.get("X-Frame-Options")),
+    content="Some(\"SAMEORIGIN\")",
+  )
 }
 
 ///|

@@ -89,7 +89,7 @@ test "create a cookie with attributes" {
     same_site=Lax,
   )
   inspect(
-    cookie,
+    cookie.to_string(),
     content="session_id=abc123; Max-Age=3600; Path=/; Domain=example.com; Secure; HttpOnly; SameSite=Lax",
   )
 }
@@ -113,9 +113,9 @@ test "minimal cookie" {
 ///|
 test "parse a cookie header" {
   let cookies = @cookie.parse_cookie("name=value; session=abc123")
-  inspect(cookies.get("name").map(fn(c) { c.value }), content="Some(\"value\")")
+  inspect(cookies.get("name").map(fn(c) { c.value }) |> @debug.to_repr(), content="Some(\"value\")")
   inspect(
-    cookies.get("session").map(fn(c) { c.value }),
+    cookies.get("session").map(fn(c) { c.value }) |> @debug.to_repr(),
     content="Some(\"abc123\")",
   )
 }

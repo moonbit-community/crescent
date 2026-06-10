@@ -99,7 +99,7 @@ test "HttpResponse::json_value sets content type and body" {
   let res = @crescent.HttpResponse::ok().json_value(user)
   inspect(res.status_code, content="OK")
   inspect(
-    res.headers.get("Content-Type"),
+    res.headers.get("Content-Type") |> @debug.to_repr,
     content="Some(\"application/json; charset=utf-8\")",
   )
   inspect(@utf8.decode(res.raw_body), content="{\"name\":\"Alice\",\"age\":30}")

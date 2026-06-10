@@ -137,7 +137,7 @@ async test "single middleware wraps final handler" {
   let middlewares : Array[(String, Middleware)] = [("", mw)]
   ignore(execute_middlewares(middlewares, event, handler))
   inspect(
-    order,
+    @debug.to_repr(order),
     content=(
       #|["mw-before", "handler", "mw-after"]
     ),
@@ -171,7 +171,7 @@ async test "multiple middlewares execute in onion model order" {
   let middlewares : Array[(String, Middleware)] = [("", mw1), ("", mw2)]
   ignore(execute_middlewares(middlewares, event, handler))
   inspect(
-    order,
+    @debug.to_repr(order),
     content=(
       #|["mw1-before", "mw2-before", "handler", "mw2-after", "mw1-after"]
     ),
@@ -197,7 +197,7 @@ async test "path-scoped middleware skips non-matching request" {
   let middlewares : Array[(String, Middleware)] = [("/api", mw)]
   ignore(execute_middlewares(middlewares, event, handler))
   inspect(
-    order,
+    @debug.to_repr(order),
     content=(
       #|["handler"]
     ),
@@ -223,7 +223,7 @@ async test "path-scoped middleware executes for matching request" {
   let middlewares : Array[(String, Middleware)] = [("/api", mw)]
   ignore(execute_middlewares(middlewares, event, handler))
   inspect(
-    order,
+    @debug.to_repr(order),
     content=(
       #|["api-mw", "handler"]
     ),

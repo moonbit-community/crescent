@@ -19,7 +19,7 @@ async test "test client GET returns json" {
   let res = client.get("/data")
   assert_eq(res.status, OK)
   inspect(
-    res.headers.get("Content-Type"),
+    @debug.to_repr(res.headers.get("Content-Type")),
     content="Some(\"application/json; charset=utf-8\")",
   )
 }

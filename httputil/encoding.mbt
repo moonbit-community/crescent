@@ -67,7 +67,7 @@ pub fn url_decode(bytes : BytesView) -> String {
 /// Convenience wrapper around `parse_form_data` for callers that already have a
 /// `StringView` (typically a query string pulled from a parsed URI).
 pub fn parse_form_data_str(view : StringView) -> Map[String, String] {
-  parse_form_data(@utf8.encode(view.to_string())[:])
+  parse_form_data(@utf8.encode(view.to_owned())[:])
 }
 
 ///|

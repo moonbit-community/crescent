@@ -72,7 +72,7 @@ fn find_header_key_case_insensitive(
 test "find_header_key_case_insensitive finds exact key" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
   inspect(
-    find_header_key_case_insensitive(headers, "Content-Type"),
+    @debug.to_repr(find_header_key_case_insensitive(headers, "Content-Type")),
     content="Some(\"Content-Type\")",
   )
 }
@@ -81,7 +81,7 @@ test "find_header_key_case_insensitive finds exact key" {
 test "find_header_key_case_insensitive finds key case-insensitively" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
   inspect(
-    find_header_key_case_insensitive(headers, "content-type"),
+    @debug.to_repr(find_header_key_case_insensitive(headers, "content-type")),
     content="Some(\"Content-Type\")",
   )
 }
@@ -89,7 +89,10 @@ test "find_header_key_case_insensitive finds key case-insensitively" {
 ///|
 test "find_header_key_case_insensitive returns None for missing key" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  inspect(find_header_key_case_insensitive(headers, "Accept"), content="None")
+  inspect(
+    @debug.to_repr(find_header_key_case_insensitive(headers, "Accept")),
+    content="None",
+  )
 }
 
 ///|
