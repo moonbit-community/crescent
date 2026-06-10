@@ -36,15 +36,15 @@ pub fn StaticAssetMeta::StaticAssetMeta(
 /// Trait for providing static file serving capabilities, including asset lookup, content retrieval, and MIME type resolution.
 pub(open) trait ServeStaticProvider {
   // This function should resolve asset meta
-  async get_meta(Self, id : String) -> StaticAssetMeta? noraise
+  async fn get_meta(Self, id : String) -> StaticAssetMeta? noraise
   // This function should resolve asset content
-  async get_contents(Self, id : String) -> &Responder noraise
+  async fn get_contents(Self, id : String) -> &Responder noraise
   // Custom MIME type resolver function
-  get_type(Self, ext : String) -> String? noraise
+  fn get_type(Self, ext : String) -> String? noraise
   // Encodings map
-  get_encodings(Self) -> Map[String, String] noraise
+  fn get_encodings(Self) -> Map[String, String] noraise
   // Index names
-  get_index_names(Self) -> Array[String] noraise
+  fn get_index_names(Self) -> Array[String] noraise
   // Fallthrough
-  get_fallthrough(Self) -> Bool noraise
+  fn get_fallthrough(Self) -> Bool noraise
 }

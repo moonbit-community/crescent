@@ -111,7 +111,7 @@ async fn StaticFileProvider::safe_resolve(
 /// Returns metadata (ETag, modification time, path, size) for the asset
 /// identified by `id`, or `None` if the file does not exist, is not a regular
 /// file, or resolves outside the provider root (symlink escape).
-pub impl ServeStaticProvider for StaticFileProvider with get_meta(
+pub impl ServeStaticProvider for StaticFileProvider with fn get_meta(
   self,
   id : String,
 ) -> @crescent.StaticAssetMeta? {
@@ -143,7 +143,7 @@ pub impl ServeStaticProvider for StaticFileProvider with get_meta(
 /// Reads and returns the full contents of the static asset identified by `id`
 /// as an HTTP response, including `Content-Length` and `ETag` headers.
 /// Returns 404 if the asset is missing or resolves outside the provider root.
-pub impl ServeStaticProvider for StaticFileProvider with get_contents(
+pub impl ServeStaticProvider for StaticFileProvider with fn get_contents(
   self,
   id : String,
 ) -> &Responder {
@@ -273,7 +273,7 @@ fn mime_type_for_extension(ext : String) -> String? {
 
 ///|
 /// Returns the MIME type for the given file extension.
-pub impl ServeStaticProvider for StaticFileProvider with get_type(
+pub impl ServeStaticProvider for StaticFileProvider with fn get_type(
   _,
   ext : String,
 ) -> String? {
@@ -283,7 +283,7 @@ pub impl ServeStaticProvider for StaticFileProvider with get_type(
 ///|
 /// Returns the content-encoding mappings (e.g. file extension to encoding name).
 /// This implementation returns an empty map, indicating no pre-encoded variants.
-pub impl ServeStaticProvider for StaticFileProvider with get_encodings(_) -> Map[
+pub impl ServeStaticProvider for StaticFileProvider with fn get_encodings(_) -> Map[
   String,
   String,
 ] {
@@ -293,7 +293,7 @@ pub impl ServeStaticProvider for StaticFileProvider with get_encodings(_) -> Map
 ///|
 /// Returns the list of filenames to try when resolving a directory request to an
 /// index document (e.g. `"index.html"`, `"index.htm"`).
-pub impl ServeStaticProvider for StaticFileProvider with get_index_names(_) -> Array[
+pub impl ServeStaticProvider for StaticFileProvider with fn get_index_names(_) -> Array[
   String,
 ] {
   [
@@ -306,6 +306,6 @@ pub impl ServeStaticProvider for StaticFileProvider with get_index_names(_) -> A
 /// Returns whether unmatched requests should fall through to subsequent
 /// middleware. This implementation returns `false`, meaning a 404 is returned
 /// for missing assets.
-pub impl ServeStaticProvider for StaticFileProvider with get_fallthrough(_) -> Bool {
+pub impl ServeStaticProvider for StaticFileProvider with fn get_fallthrough(_) -> Bool {
   false
 }

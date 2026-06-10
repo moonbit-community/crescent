@@ -6,7 +6,7 @@ struct TestUser {
 } derive(FromJson, ToJson, Eq)
 
 ///|
-impl Show for TestUser with output(self, logger) {
+impl Show for TestUser with fn output(self, logger) {
   logger.write_string("TestUser { name: ")
   logger.write_object(self.name)
   logger.write_string(", age: ")

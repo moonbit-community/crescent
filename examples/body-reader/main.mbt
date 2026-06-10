@@ -5,7 +5,7 @@ using @crescent {type HttpResponse}
 struct Csv(String)
 
 ///|
-impl @crescent.BodyReader for Csv with from_request(req) -> Csv {
+impl @crescent.BodyReader for Csv with fn from_request(req) -> Csv {
   let text : String = req.body()
   Csv(text)
 }

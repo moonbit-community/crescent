@@ -352,9 +352,9 @@ so user code is free to add new implementations.
 ```moonbit nocheck
 ///|
 pub(open) trait Responder {
-  options(Self, HttpResponse) -> Unit
-  output(Self, Buffer) -> Unit
-  output_bytes(Self) -> Bytes?
+  fn options(Self, HttpResponse) -> Unit
+  fn output(Self, Buffer) -> Unit
+  fn output_bytes(Self) -> Bytes?
 }
 ```
 
@@ -423,7 +423,7 @@ test "html helper sets text/html content type" {
 ```moonbit nocheck
 ///|
 pub(open) trait BodyReader {
-  from_request(HttpRequest) -> Self raise
+  fn from_request(HttpRequest) -> Self raise
 }
 ```
 

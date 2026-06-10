@@ -256,7 +256,7 @@ pub struct FallthroughProvider {
 }
 
 ///|
-pub impl @crescent.ServeStaticProvider for FallthroughProvider with get_fallthrough(
+pub impl @crescent.ServeStaticProvider for FallthroughProvider with fn get_fallthrough(
   _,
 ) -> Bool {
   true

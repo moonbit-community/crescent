@@ -7,7 +7,7 @@ pub(all) enum SameSiteOption {
 } derive(Debug, Eq)
 
 ///|
-pub impl Show for SameSiteOption with output(self, logger) {
+pub impl Show for SameSiteOption with fn output(self, logger) {
   match self {
     Lax => logger.write_string("Lax")
     Strict => logger.write_string("Strict")
@@ -16,7 +16,7 @@ pub impl Show for SameSiteOption with output(self, logger) {
 }
 
 ///|
-pub impl ToJson for SameSiteOption with to_json(self : SameSiteOption) -> Json {
+pub impl ToJson for SameSiteOption with fn to_json(self : SameSiteOption) -> Json {
   match self {
     Lax => "lax"
     Strict => "strict"
@@ -76,7 +76,7 @@ fn sanitize_cookie_value(s : String) -> String {
 }
 
 ///|
-pub impl Show for CookieItem with output(self, logger) -> Unit {
+pub impl Show for CookieItem with fn output(self, logger) -> Unit {
   logger.write_string(sanitize_cookie_value(self.name))
   logger.write_char('=')
   logger.write_string(sanitize_cookie_value(self.value))
@@ -105,7 +105,7 @@ pub impl Show for CookieItem with output(self, logger) -> Unit {
 }
 
 ///|
-pub impl Show for CookieItem with to_string(self : CookieItem) -> String {
+pub impl Show for CookieItem with fn to_string(self : CookieItem) -> String {
   let buf = @buffer.new()
   self.output(buf)
   buf.to_string()

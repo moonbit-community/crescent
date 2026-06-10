@@ -2,7 +2,7 @@ import {
   "moonbitlang/async",
   "bobzhang/crescent",
   "bobzhang/crescent/cors",
-  "bobzhang/crescent/middleware" @middleware,
+  "bobzhang/crescent/middleware",
 }
 
 options(

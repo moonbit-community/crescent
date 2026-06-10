@@ -130,7 +130,7 @@ pub(all) enum StatusCode {
 } derive(Debug, ToJson, Eq)
 
 ///|
-pub impl Show for StatusCode with output(self, logger) {
+pub impl Show for StatusCode with fn output(self, logger) {
   match self {
     Continue => logger.write_string("Continue")
     SwitchingProtocols => logger.write_string("SwitchingProtocols")

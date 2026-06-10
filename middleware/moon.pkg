@@ -1,11 +1,11 @@
 import {
   "bobzhang/crescent",
-  "bobzhang/crescent/httputil" @httputil,
+  "bobzhang/crescent/httputil",
   "moonbitlang/async",
 }
 
 import {
-  "bobzhang/crescent/test_client" @test_client,
+  "bobzhang/crescent/test_client",
 } for "test"
 
 warnings = "+missing_doc+unnecessary_annotation+74"

@@ -1,8 +1,8 @@
 import {
-  "bobzhang/crescent/core" @core,
-  "bobzhang/crescent/httputil" @httputil,
-  "bobzhang/crescent/router" @router,
-  "bobzhang/crescent/cookie" @cookie,
+  "bobzhang/crescent/core",
+  "bobzhang/crescent/httputil",
+  "bobzhang/crescent/router",
+  "bobzhang/crescent/cookie",
   "bobzhang/crescent/websocket" @ws,
   "moonbitlang/async",
   "moonbitlang/async/http",
@@ -17,9 +17,9 @@ import {
 }
 
 import {
-  "bobzhang/crescent/fetch" @fetch,
-  "bobzhang/crescent/middleware" @middleware,
-  "bobzhang/crescent/test_client" @test_client,
+  "bobzhang/crescent/fetch",
+  "bobzhang/crescent/middleware",
+  "bobzhang/crescent/test_client",
   "moonbitlang/async/os_error",
   "moonbitlang/async/websocket",
 } for "test"

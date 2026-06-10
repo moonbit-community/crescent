@@ -56,7 +56,7 @@ struct StaticResolvedResponder {
 }
 
 ///|
-pub impl Responder for StaticResolvedResponder with options(self, res) -> Unit {
+pub impl Responder for StaticResolvedResponder with fn options(self, res) -> Unit {
   self.inner.options(res)
   if res.status_code == OK {
     self.asset_headers.each((key, value) => {
@@ -68,12 +68,12 @@ pub impl Responder for StaticResolvedResponder with options(self, res) -> Unit {
 }
 
 ///|
-pub impl Responder for StaticResolvedResponder with output(self, buf) -> Unit {
+pub impl Responder for StaticResolvedResponder with fn output(self, buf) -> Unit {
   self.inner.output(buf)
 }
 
 ///|
-pub impl Responder for StaticResolvedResponder with output_bytes(self) -> Bytes? {
+pub impl Responder for StaticResolvedResponder with fn output_bytes(self) -> Bytes? {
   self.inner.output_bytes()
 }
 

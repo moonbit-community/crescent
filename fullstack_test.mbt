@@ -18,7 +18,7 @@ struct Todo {
 } derive(ToJson, FromJson, Eq)
 
 ///|
-impl Show for Todo with output(self, logger) {
+impl Show for Todo with fn output(self, logger) {
   logger.write_string("Todo { id: ")
   logger.write_object(self.id)
   logger.write_string(", title: ")
@@ -44,7 +44,7 @@ struct UserProfile {
 } derive(ToJson, FromJson, Eq)
 
 ///|
-impl Show for UserProfile with output(self, logger) {
+impl Show for UserProfile with fn output(self, logger) {
   logger.write_string("UserProfile { id: ")
   logger.write_object(self.id)
   logger.write_string(", name: ")
