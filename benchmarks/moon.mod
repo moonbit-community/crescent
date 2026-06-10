@@ -3,7 +3,7 @@ name = "bobzhang/crescent-benchmarks"
 version = "0.0.1"
 
 import {
-  "bobzhang/crescent@0.10.0",
+  "bobzhang/crescent@0.10.1",
   "moonbitlang/x@0.4.41",
   "moonbitlang/async@0.17.0",
 }

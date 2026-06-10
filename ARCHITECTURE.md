@@ -2,7 +2,7 @@
 
 > **Crescent** (`bobzhang/crescent`) is a native-first, type-safe, async HTTP and
 > WebSocket server framework for [MoonBit](https://docs.moonbitlang.com). Version
-> 0.10.0. Apache-2.0 licensed.
+> 0.10.1. Apache-2.0 licensed.
 
 This document explains the architecture of the Crescent codebase from the ground
 up. It assumes you are a strong programmer but does not assume familiarity with
