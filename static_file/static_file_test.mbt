@@ -197,6 +197,10 @@ async test "static_file serves head and validates etags" {
       get_body.binary(),
       @fs.read_file("static_file/testdata/hello.txt").binary(),
     )
+    assert_eq(
+      get_response.headers.get("content-type"),
+      Some("text/plain; charset=utf-8"),
+    )
     let etag = get_response.headers.get("etag").unwrap_or("")
     guard etag != "" else {
       fail("expected filesystem provider to emit an ETag")
@@ -216,6 +220,10 @@ async test "static_file serves head and validates etags" {
     assert_eq(head_response.headers.get("etag"), Some(etag))
     assert_eq(head_response.headers.get("last-modified"), Some(last_modified))
     assert_eq(head_response.headers.get("content-length"), Some("16"))
+    assert_eq(
+      head_response.headers.get("content-type"),
+      Some("text/plain; charset=utf-8"),
+    )
 
     let (cached_response, cached_body) = issue_request(
       port,

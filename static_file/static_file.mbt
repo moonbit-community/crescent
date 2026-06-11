@@ -180,10 +180,15 @@ pub impl ServeStaticProvider for StaticFileProvider with fn get_contents(
           } noraise {
             v => Ok(v)
           }
+          let asset_type = get_file_extension(path).bind(mime_type_for_extension)
           let headers = match (file_size, file_mtime) {
             (Ok(size), Ok((mtime_sec, mtime_nsec))) => {
               let headers : Map[String, String] = {}
               headers.set("Content-Length", size.to_string())
+              match asset_type {
+                Some(content_type) => headers.set("Content-Type", content_type)
+                _ => ()
+              }
               headers.set(
                 "ETag",
                 static_asset_etag(mtime_sec, mtime_nsec, size),
@@ -336,4 +341,12 @@ pub impl ServeStaticProvider for StaticFileProvider with fn get_index_names(_) -
 /// for missing assets.
 pub impl ServeStaticProvider for StaticFileProvider with fn get_fallthrough(_) -> Bool {
   false
+}
+
+///|
+fn get_file_extension(path : String) -> String? {
+  match path.rev_split_once(".") {
+    Some((_, ext)) => Some(ext.to_owned())
+    _ => None
+  }
 }
