@@ -81,31 +81,31 @@ async fn read_request_body_async(
   conn : @http.ServerConnection,
   max_request_body_bytes : Int?,
 ) -> RequestBodyReadOutcome {
-  match max_request_body_bytes {
-    None => Body(body_reader.read_all().binary())
-    Some(limit) => {
-      match request_content_length(request) {
-        Some(content_length) if content_length > limit => {
-          send_request_entity_too_large_async(request, conn)
-          return RequestRejected
-        }
-        _ => ()
-      }
-      let buffer = @buffer.new()
-      let mut total = 0
-      for ;; {
-        let next_chunk_size = next_native_request_body_chunk_size(limit, total)
-        guard body_reader.read_some(max_len=next_chunk_size) is Some(chunk) else {
-          return Body(buffer.contents())
-        }
-        if native_request_body_chunk_exceeds_limit(limit, total, chunk.length()) {
-          send_request_entity_too_large_async(request, conn)
-          return RequestRejected
-        }
-        total += chunk.length()
-        buffer.write_bytes(chunk)
-      }
+  // Default to 1 MiB when no explicit limit is configured (CWE-770)
+  let limit = match max_request_body_bytes {
+    Some(v) => v
+    None => 1_048_576
+  }
+  match request_content_length(request) {
+    Some(content_length) if content_length > limit => {
+      send_request_entity_too_large_async(request, conn)
+      return RequestRejected
     }
+    _ => ()
+  }
+  let buffer = @buffer.new()
+  let mut total = 0
+  for ;; {
+    let next_chunk_size = next_native_request_body_chunk_size(limit, total)
+    guard body_reader.read_some(max_len=next_chunk_size) is Some(chunk) else {
+      return Body(buffer.contents())
+    }
+    if native_request_body_chunk_exceeds_limit(limit, total, chunk.length()) {
+      send_request_entity_too_large_async(request, conn)
+      return RequestRejected
+    }
+    total += chunk.length()
+    buffer.write_bytes(chunk)
   }
 }
 

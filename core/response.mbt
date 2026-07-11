@@ -116,6 +116,9 @@ pub fn HttpResponse::set_cookie(
   http_only? : Bool,
   same_site? : @cookie.SameSiteOption,
 ) -> Unit {
+  let secure = secure.or(Some(true))
+  let http_only = http_only.or(Some(true))
+  let same_site = same_site.or(Some(@cookie.Lax))
   let item = @cookie.CookieItem(
     name~,
     value~,

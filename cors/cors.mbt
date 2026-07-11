@@ -23,14 +23,13 @@ fn resolve_allow_origin(
   credentials : Bool,
 ) -> String noraise {
   if credentials && configured_origin == "*" {
-    // Reflect the request origin; browsers reject ACAO:* with credentials.
-    // Always set Vary: Origin so caches don't serve the wrong origin, even
-    // when the request has no Origin (in which case we fall back to "*").
+    // When credentials=true with wildcard origin, do NOT reflect the
+    // request's Origin — that would let any site make credentialed
+    // cross-origin requests (CWE-942). Return "*" instead; browsers
+    // will correctly block the response, nudging callers to specify
+    // an explicit allowed origin.
     @httputil.append_token_case_insensitive(event.res.headers, "Vary", "Origin")
-    match event.req.get_header("origin") {
-      Some(origin) => origin
-      None => "*" // fallback; browser will reject but we did our best
-    }
+    "*"
   } else {
     configured_origin
   }
