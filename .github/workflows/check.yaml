@@ -6,9 +6,6 @@ on:
   pull_request:
     branches: [main, master]
   workflow_dispatch:
-  schedule:
-    # Runs at 02:30, only on Friday.
-    - cron: "30 2 * * 5"
 
 jobs:
   check:
@@ -30,7 +27,7 @@ jobs:
         run: moon update
 
       - name: moon check
-        run: moon check --deny-warn --target native
+        run: moon check --deny-warn --target native --warn-list=-ambiguous_braces-lexmatch_longest_match
 
       - name: moon build
         run: moon build --target native

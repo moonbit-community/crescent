@@ -19,7 +19,7 @@ fn hex_digit(b : Byte) -> Int? {
 /// percent-encoding for any non-ASCII byte, so the view is encoded back to
 /// UTF-8 bytes once before decoding.
 pub fn url_decode_str(view : StringView) -> String {
-  url_decode(@utf8.encode(view.to_string())[:])
+  url_decode(@utf8.encode(view.to_owned())[:])
 }
 
 ///|
@@ -67,13 +67,13 @@ pub fn url_decode(bytes : BytesView) -> String {
 /// Convenience wrapper around `parse_form_data` for callers that already have a
 /// `StringView` (typically a query string pulled from a parsed URI).
 pub fn parse_form_data_str(view : StringView) -> Map[String, String] {
-  parse_form_data(@utf8.encode(view.to_string())[:])
+  parse_form_data(@utf8.encode(view.to_owned())[:])
 }
 
 ///|
 /// Parses URL-encoded form data (e.g. `key=value&foo=bar`) into a map of key-value pairs.
 pub fn parse_form_data(bytes : BytesView) -> Map[String, String] {
-  let res = Map::new()
+  let res = Map([])
   if bytes.length() == 0 {
     return res
   }

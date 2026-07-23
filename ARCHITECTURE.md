@@ -233,7 +233,7 @@ graph TB
     end
 
     subgraph "External Dependencies"
-        ASYNC["moonbitlang/async<br/>v0.17.0"]
+        ASYNC["moonbitlang/async<br/>v0.20.3"]
         CORE["moonbitlang/core<br/>(json, string, buffer, utf8)"]
     end
 
@@ -345,12 +345,12 @@ graph LR
     style HTTP fill:#e8f5e9
 ```
 
-**External dependencies** (from `moon.mod.json`):
+**External dependencies** (from `moon.mod`):
 
 | Dependency          | Version | Purpose                                  |
 |---------------------|---------|------------------------------------------|
 | `moonbitlang/x`     | 0.4.41  | Extended standard library utilities      |
-| `moonbitlang/async`  | 0.17.0  | Cooperative async runtime, TCP, HTTP/WS  |
+| `moonbitlang/async`  | 0.20.3  | Cooperative async runtime, TCP, HTTP/WS  |
 
 ---
 

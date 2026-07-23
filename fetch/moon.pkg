@@ -1,10 +1,11 @@
 import {
-  "bobzhang/crescent/core" @core,
-  "bobzhang/crescent/uri" @uri,
-  "bobzhang/crescent/httputil" @httputil,
+  "bobzhang/crescent/core",
+  "bobzhang/crescent/uri",
+  "bobzhang/crescent/httputil",
   "moonbitlang/async/http",
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/test",
 }
 
 warnings = "+missing_doc+unnecessary_annotation+74"

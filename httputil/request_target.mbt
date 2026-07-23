@@ -37,7 +37,7 @@ pub fn request_target_path(request_target : String) -> String {
   }
   let path_view = target_from_path[:end]
   // Only normalize `//` within the path itself.
-  let path_str = path_view.to_string()
+  let path_str = path_view.to_owned()
   if path_str.contains("//") {
     normalize_path(path_str)
   } else {
@@ -80,7 +80,7 @@ pub fn request_target_query_string(request_target : String) -> String? {
           end = fragment_start
         _ => ()
       }
-      Some(request_target[query_start + 1:end].to_string())
+      Some(request_target[query_start + 1:end].to_owned())
     }
     None => None
   }

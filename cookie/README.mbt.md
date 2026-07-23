@@ -88,9 +88,20 @@ test "create a cookie with attributes" {
     http_only=true,
     same_site=Lax,
   )
-  inspect(
+  debug_inspect(
     cookie,
-    content="session_id=abc123; Max-Age=3600; Path=/; Domain=example.com; Secure; HttpOnly; SameSite=Lax",
+    content=(
+      #|{
+      #|  name: "session_id",
+      #|  value: "abc123",
+      #|  max_age: Some(3600),
+      #|  path: Some("/"),
+      #|  domain: Some("example.com"),
+      #|  secure: Some(true),
+      #|  http_only: Some(true),
+      #|  same_site: Some(Lax),
+      #|}
+    ),
   )
 }
 ```
@@ -101,7 +112,12 @@ A minimal cookie only needs `name` and `value`:
 ///|
 test "minimal cookie" {
   let cookie = @cookie.CookieItem(name="theme", value="dark")
-  inspect(cookie.to_string(), content="theme=dark")
+  debug_inspect(
+    cookie.to_string(),
+    content=(
+      #|"theme=dark"
+    ),
+  )
 }
 ```
 
@@ -113,8 +129,11 @@ test "minimal cookie" {
 ///|
 test "parse a cookie header" {
   let cookies = @cookie.parse_cookie("name=value; session=abc123")
-  inspect(cookies.get("name").map(fn(c) { c.value }), content="Some(\"value\")")
-  inspect(
+  debug_inspect(
+    cookies.get("name").map(fn(c) { c.value }),
+    content="Some(\"value\")",
+  )
+  debug_inspect(
     cookies.get("session").map(fn(c) { c.value }),
     content="Some(\"abc123\")",
   )
@@ -149,7 +168,12 @@ test "serialize multiple cookies" {
     @cookie.CookieItem(name="a", value="1"),
     CookieItem(name="b", value="2"),
   ]
-  inspect(@cookie.cookie_to_string(cookies), content="a=1;b=2")
+  debug_inspect(
+    @cookie.cookie_to_string(cookies),
+    content=(
+      #|"a=1;b=2"
+    ),
+  )
 }
 ```
 

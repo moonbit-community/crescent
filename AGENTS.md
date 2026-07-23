@@ -9,7 +9,7 @@ This is a [MoonBit](https://docs.moonbitlang.com) project.
   blackbox test files (common, ending in `_test.mbt`) and whitebox test files
   (ending in `_wbtest.mbt`).
 
-- In the toplevel directory, this is a `moon.mod.json` file listing about the
+- In the toplevel directory, this is a `moon.mod` file listing about the
   module and some meta information.
 
 ## Coding convention

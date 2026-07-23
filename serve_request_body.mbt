@@ -25,28 +25,28 @@ fn next_native_request_body_chunk_size(limit : Int, total : Int) -> Int {
 
 ///|
 test "next_native_request_body_chunk_size returns 1024 when remaining >= 1024" {
-  inspect(next_native_request_body_chunk_size(2048, 0), content="1024")
-  inspect(next_native_request_body_chunk_size(2048, 1024), content="1024")
-  inspect(next_native_request_body_chunk_size(4096, 2000), content="1024")
+  debug_inspect(next_native_request_body_chunk_size(2048, 0), content="1024")
+  debug_inspect(next_native_request_body_chunk_size(2048, 1024), content="1024")
+  debug_inspect(next_native_request_body_chunk_size(4096, 2000), content="1024")
 }
 
 ///|
 test "next_native_request_body_chunk_size returns remaining + 1 when remaining < 1024" {
-  inspect(next_native_request_body_chunk_size(1000, 0), content="1001")
-  inspect(next_native_request_body_chunk_size(2048, 1500), content="549")
-  inspect(next_native_request_body_chunk_size(100, 99), content="2")
-  inspect(next_native_request_body_chunk_size(100, 100), content="1")
+  debug_inspect(next_native_request_body_chunk_size(1000, 0), content="1001")
+  debug_inspect(next_native_request_body_chunk_size(2048, 1500), content="549")
+  debug_inspect(next_native_request_body_chunk_size(100, 99), content="2")
+  debug_inspect(next_native_request_body_chunk_size(100, 100), content="1")
 }
 
 ///|
 test "native request body limit helpers handle int max boundaries" {
   let max_int = 2_147_483_647
-  inspect(next_native_request_body_chunk_size(max_int, 0), content="1024")
-  inspect(
+  debug_inspect(next_native_request_body_chunk_size(max_int, 0), content="1024")
+  debug_inspect(
     native_request_body_chunk_exceeds_limit(max_int, max_int, 1),
     content="true",
   )
-  inspect(
+  debug_inspect(
     native_request_body_chunk_exceeds_limit(max_int, max_int - 1, 1),
     content="false",
   )
@@ -63,15 +63,30 @@ fn native_request_body_chunk_exceeds_limit(
 
 ///|
 test "native_request_body_chunk_exceeds_limit returns true when chunk exceeds remaining" {
-  inspect(native_request_body_chunk_exceeds_limit(100, 90, 11), content="true")
-  inspect(native_request_body_chunk_exceeds_limit(100, 100, 1), content="true")
+  debug_inspect(
+    native_request_body_chunk_exceeds_limit(100, 90, 11),
+    content="true",
+  )
+  debug_inspect(
+    native_request_body_chunk_exceeds_limit(100, 100, 1),
+    content="true",
+  )
 }
 
 ///|
 test "native_request_body_chunk_exceeds_limit returns false when chunk fits" {
-  inspect(native_request_body_chunk_exceeds_limit(100, 90, 10), content="false")
-  inspect(native_request_body_chunk_exceeds_limit(100, 0, 100), content="false")
-  inspect(native_request_body_chunk_exceeds_limit(100, 50, 1), content="false")
+  debug_inspect(
+    native_request_body_chunk_exceeds_limit(100, 90, 10),
+    content="false",
+  )
+  debug_inspect(
+    native_request_body_chunk_exceeds_limit(100, 0, 100),
+    content="false",
+  )
+  debug_inspect(
+    native_request_body_chunk_exceeds_limit(100, 50, 1),
+    content="false",
+  )
 }
 
 ///|
@@ -91,7 +106,7 @@ async fn read_request_body_async(
         }
         _ => ()
       }
-      let buffer = @buffer.new()
+      let buffer = Buffer()
       let mut total = 0
       for ;; {
         let next_chunk_size = next_native_request_body_chunk_size(limit, total)

@@ -89,7 +89,7 @@ test "detect preflight" {
     res: @crescent.HttpResponse(status_code=OK),
     params: {},
   }
-  inspect(@cors.is_preflight_request(event), content="true")
+  debug_inspect(@cors.is_preflight_request(event), content="true")
 }
 ```
 
@@ -108,7 +108,7 @@ test "regular options is not preflight" {
     res: @crescent.HttpResponse(status_code=OK),
     params: {},
   }
-  inspect(@cors.is_preflight_request(event), content="false")
+  debug_inspect(@cors.is_preflight_request(event), content="false")
 }
 ```
 
@@ -135,13 +135,13 @@ test "append cors headers" {
     origin="https://app.com",
     methods="GET, POST",
   )
-  inspect(
+  debug_inspect(
     event.res.headers.get("Access-Control-Allow-Origin"),
     content=(
       #|Some("https://app.com")
     ),
   )
-  inspect(
+  debug_inspect(
     event.res.headers.get("Access-Control-Allow-Methods"),
     content=(
       #|Some("GET, POST")

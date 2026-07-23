@@ -36,10 +36,10 @@ pub fn CompiledRoute::CompiledRoute(template : String) -> CompiledRoute {
       segments.push(Wildcard)
       is_static = false
     } else if part is [.. ":", .. param_name] {
-      segments.push(Param(param_name.to_string()))
+      segments.push(Param(param_name.to_owned()))
       is_static = false
     } else {
-      segments.push(Static(part.to_string()))
+      segments.push(Static(part.to_owned()))
     }
   }
   { template, segments, is_static }

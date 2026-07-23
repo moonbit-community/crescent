@@ -55,17 +55,13 @@ async fn resolve_within_root(
   root : String,
   candidate : String,
 ) -> String? noraise {
-  let root_real = try? @fs.realpath(root)
-  let candidate_real = try? @fs.realpath(candidate)
-  match (root_real, candidate_real) {
-    (Ok(root_path), Ok(cand_path)) =>
-      // Candidate must be equal to root, or under root with a separator.
-      if cand_path == root_path || cand_path.has_prefix(root_path + "/") {
-        Some(cand_path)
-      } else {
-        None
-      }
-    _ => None
+  let root_path = @fs.realpath(root) catch { _ => return None }
+  let candidate_path = @fs.realpath(candidate) catch { _ => return None }
+  // Candidate must be equal to root, or under root with a separator.
+  if candidate_path == root_path || candidate_path.has_prefix(root_path + "/") {
+    Some(candidate_path)
+  } else {
+    None
   }
 }
 
@@ -111,7 +107,7 @@ async fn StaticFileProvider::safe_resolve(
 /// Returns metadata (ETag, modification time, path, size) for the asset
 /// identified by `id`, or `None` if the file does not exist, is not a regular
 /// file, or resolves outside the provider root (symlink escape).
-pub impl ServeStaticProvider for StaticFileProvider with get_meta(
+pub impl ServeStaticProvider for StaticFileProvider with fn get_meta(
   self,
   id : String,
 ) -> @crescent.StaticAssetMeta? {
@@ -120,18 +116,16 @@ pub impl ServeStaticProvider for StaticFileProvider with get_meta(
       match open_static_asset(path) {
         Some(file) => {
           defer file.close()
-          match (try? file.size(), try? file.mtime()) {
-            (Ok(size), Ok((mtime_sec, mtime_nsec))) =>
-              Some(
-                @crescent.StaticAssetMeta(
-                  etag=static_asset_etag(mtime_sec, mtime_nsec, size),
-                  mtime=mtime_sec,
-                  path~,
-                  size~,
-                ),
-              )
-            _ => None
-          }
+          let size = file.size() catch { _ => return None }
+          let (mtime_sec, mtime_nsec) = file.mtime() catch { _ => return None }
+          Some(
+            @crescent.StaticAssetMeta(
+              etag=static_asset_etag(mtime_sec, mtime_nsec, size),
+              mtime=mtime_sec,
+              path~,
+              size~,
+            ),
+          )
         }
         None => None
       }
@@ -143,7 +137,7 @@ pub impl ServeStaticProvider for StaticFileProvider with get_meta(
 /// Reads and returns the full contents of the static asset identified by `id`
 /// as an HTTP response, including `Content-Length` and `ETag` headers.
 /// Returns 404 if the asset is missing or resolves outside the provider root.
-pub impl ServeStaticProvider for StaticFileProvider with get_contents(
+pub impl ServeStaticProvider for StaticFileProvider with fn get_contents(
   self,
   id : String,
 ) -> &Responder {
@@ -152,16 +146,14 @@ pub impl ServeStaticProvider for StaticFileProvider with get_contents(
       match open_static_asset(path) {
         Some(file) => {
           defer file.close()
-          let headers = match (try? file.size(), try? file.mtime()) {
-            (Ok(size), Ok((mtime_sec, mtime_nsec))) => {
-              let headers : Map[String, String] = {}
-              headers.set("Content-Length", size.to_string())
-              headers.set(
-                "ETag",
-                static_asset_etag(mtime_sec, mtime_nsec, size),
-              )
-              headers
-            }
+          let headers = try {
+            let size = file.size()
+            let (mtime_sec, mtime_nsec) = file.mtime()
+            let headers : Map[String, String] = {}
+            headers.set("Content-Length", size.to_string())
+            headers.set("ETag", static_asset_etag(mtime_sec, mtime_nsec, size))
+            headers
+          } catch {
             _ => {}
           }
           try file.read_all().binary() catch {
@@ -273,7 +265,7 @@ fn mime_type_for_extension(ext : String) -> String? {
 
 ///|
 /// Returns the MIME type for the given file extension.
-pub impl ServeStaticProvider for StaticFileProvider with get_type(
+pub impl ServeStaticProvider for StaticFileProvider with fn get_type(
   _,
   ext : String,
 ) -> String? {
@@ -283,7 +275,7 @@ pub impl ServeStaticProvider for StaticFileProvider with get_type(
 ///|
 /// Returns the content-encoding mappings (e.g. file extension to encoding name).
 /// This implementation returns an empty map, indicating no pre-encoded variants.
-pub impl ServeStaticProvider for StaticFileProvider with get_encodings(_) -> Map[
+pub impl ServeStaticProvider for StaticFileProvider with fn get_encodings(_) -> Map[
   String,
   String,
 ] {
@@ -293,7 +285,7 @@ pub impl ServeStaticProvider for StaticFileProvider with get_encodings(_) -> Map
 ///|
 /// Returns the list of filenames to try when resolving a directory request to an
 /// index document (e.g. `"index.html"`, `"index.htm"`).
-pub impl ServeStaticProvider for StaticFileProvider with get_index_names(_) -> Array[
+pub impl ServeStaticProvider for StaticFileProvider with fn get_index_names(_) -> Array[
   String,
 ] {
   [
@@ -306,6 +298,6 @@ pub impl ServeStaticProvider for StaticFileProvider with get_index_names(_) -> A
 /// Returns whether unmatched requests should fall through to subsequent
 /// middleware. This implementation returns `false`, meaning a 404 is returned
 /// for missing assets.
-pub impl ServeStaticProvider for StaticFileProvider with get_fallthrough(_) -> Bool {
+pub impl ServeStaticProvider for StaticFileProvider with fn get_fallthrough(_) -> Bool {
   false
 }

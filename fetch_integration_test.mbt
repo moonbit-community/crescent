@@ -56,7 +56,7 @@ async test "fetch uses async client for request headers and payloads" {
 
 ///|
 async test "fetch preserves explicit content-type without duplicate request headers" {
-  let raw_headers = Ref::new("")
+  let raw_headers = Ref("")
   @async.with_task_group(group => {
     let server = @socket.TcpServer(@socket.Addr::parse("127.0.0.1:0"))
     let port = server.addr.port()
@@ -105,11 +105,11 @@ async test "fetch supports head and rejects unsupported protocols" {
     err => raise err
   }
 
-  let unsupported = try? @fetch.get("ftp://example.com/data")
-  match unsupported {
-    Err(@fetch.FetchError::RequestFailed(message)) =>
+  try @fetch.get("ftp://example.com/data") catch {
+    @fetch.FetchError::RequestFailed(message) =>
       inspect(message, content="unsupported protocol: ftp")
-    Err(err) => fail("unexpected error: \{err}")
-    Ok(_) => fail("expected fetch to reject unsupported protocol")
+    err => fail("unexpected error: \{err}")
+  } noraise {
+    _ => fail("expected fetch to reject unsupported protocol")
   }
 }

@@ -3,6 +3,4 @@ import {
   "bobzhang/crescent",
 }
 
-options(
-  "is-main": true,
-)
+pkgtype(kind: "executable")

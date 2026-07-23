@@ -1,8 +1,8 @@
 import {
-  "bobzhang/crescent/core" @core,
-  "bobzhang/crescent/httputil" @httputil,
-  "bobzhang/crescent/router" @router,
-  "bobzhang/crescent/cookie" @cookie,
+  "bobzhang/crescent/core",
+  "bobzhang/crescent/httputil",
+  "bobzhang/crescent/router",
+  "bobzhang/crescent/cookie",
   "bobzhang/crescent/websocket" @ws,
   "moonbitlang/async",
   "moonbitlang/async/http",
@@ -12,29 +12,32 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/strconv",
   "moonbitlang/core/string",
+  "moonbitlang/core/test",
   "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
 }
 
 import {
-  "bobzhang/crescent/fetch" @fetch,
-  "bobzhang/crescent/middleware" @middleware,
-  "bobzhang/crescent/test_client" @test_client,
+  "bobzhang/crescent/fetch",
+  "bobzhang/crescent/middleware",
+  "bobzhang/crescent/test_client",
   "moonbitlang/async/os_error",
   "moonbitlang/async/websocket",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/test",
 } for "test"
 
 import {
   "moonbitlang/async/os_error",
   "moonbitlang/async/websocket",
+  "moonbitlang/core/debug",
 } for "wbtest"
 
 warnings = "+missing_doc+unnecessary_annotation"
 
-// Crescent is native-only (depends on moonbitlang/async/{http,socket,websocket}
-// which are not available on wasm/js). Files using the `.native.mbt` extension
-// are auto-restricted to native; the entries below cover the test, whitebox-test,
-// and integration-test files where MoonBit has no naming convention for native-only.
+// Target enablement is intentionally deferred. Files using the `.native.mbt`
+// extension are auto-restricted to native; the entries below cover test files
+// where MoonBit has no native-only naming convention.
 
 options(
   targets: {

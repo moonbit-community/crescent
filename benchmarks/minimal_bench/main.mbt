@@ -1,6 +1,6 @@
 ///|
 async fn main {
-  let server = @http.Server::new(
+  let server = @http.Server(
     @socket.Addr::parse("0.0.0.0:3005"),
     reuse_addr=true,
   )

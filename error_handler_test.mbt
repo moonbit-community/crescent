@@ -4,13 +4,13 @@ test "custom not found handler is set" {
   app.set_not_found_handler(_ => {
     @crescent.HttpResponse(status_code=NotFound).body("Custom 404")
   })
-  inspect(app.has_not_found_handler(), content="true")
+  debug_inspect(app.has_not_found_handler(), content="true")
 }
 
 ///|
 test "not found handler defaults to none" {
   let app = @crescent.App()
-  inspect(app.has_not_found_handler(), content="false")
+  debug_inspect(app.has_not_found_handler(), content="false")
 }
 
 ///|
@@ -21,7 +21,7 @@ test "group merges not found handler" {
       @crescent.HttpResponse(status_code=NotFound).body("API 404")
     })
   })
-  inspect(app.has_not_found_handler(), content="true")
+  debug_inspect(app.has_not_found_handler(), content="true")
 }
 
 ///|

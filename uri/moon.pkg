@@ -2,3 +2,11 @@
 // are RFC 3986 helpers exercised by uri_wbtest.mbt for spec-compliance
 // coverage, but not used by the public Uri::Uri parser path.
 warnings = "+74-1"
+
+import {
+  "moonbitlang/core/test",
+} for "test"
+
+import {
+  "moonbitlang/core/test",
+} for "wbtest"
