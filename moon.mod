@@ -1,6 +1,6 @@
 name = "bobzhang/crescent"
 
-version = "0.10.0"
+version = "0.11.0"
 
 import {
   "moonbitlang/x@0.4.41",
@@ -9,7 +9,7 @@ import {
 
 readme = "README.md"
 
-repository = "https://github.com/bobzhang/crescent"
+repository = "https://github.com/moonbit-community/crescent"
 
 license = "Apache-2.0"
 
