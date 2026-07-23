@@ -53,3 +53,16 @@ jobs:
 
       - name: moon test (wasm)
         run: moon test --target wasm
+
+      - name: install hurl
+        env:
+          HURL_VERSION: 8.0.1
+        run: |
+          curl --fail --show-error --location --output /tmp/hurl.deb \
+            "https://github.com/Orange-OpenSource/hurl/releases/download/${HURL_VERSION}/hurl_${HURL_VERSION}_amd64.deb"
+          sudo apt-get install --yes /tmp/hurl.deb
+
+      - name: hurl end-to-end tests
+        run: |
+          e2e/run.sh native
+          e2e/run.sh wasm
