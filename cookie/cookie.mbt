@@ -134,10 +134,10 @@ pub fn parse_cookie(cookie : StringView) -> Map[String, CookieItem] {
     let key = key.to_owned()
     let value = dequote(value).to_owned()
     if last_cookie_item is Some((name, item)) {
-      let new_item = lexmatch key with longest {
-        "(?i:path)" => { ..item, path: Some(value) }
-        "(?i:domain)" => { ..item, domain: Some(value) }
-        "(?i:max-age)" =>
+      let new_item = lexscan key with longest {
+        re"^(?i:path)$" => { ..item, path: Some(value) }
+        re"^(?i:domain)$" => { ..item, domain: Some(value) }
+        re"^(?i:max-age)$" =>
           {
             ..item,
             max_age: try @string.parse_int(value) catch {
@@ -146,13 +146,13 @@ pub fn parse_cookie(cookie : StringView) -> Map[String, CookieItem] {
               x => Some(x)
             },
           }
-        "(?i:secure)" => { ..item, secure: Some(true) }
-        "(?i:httponly)" => { ..item, http_only: Some(true) }
-        "(?i:samesite)" => {
-          let same_site = lexmatch value with longest {
-            "(?i:lax)" => Some(Lax)
-            "(?i:strict)" => Some(Strict)
-            "(?i:none)" => Some(SameSiteNone)
+        re"^(?i:secure)$" => { ..item, secure: Some(true) }
+        re"^(?i:httponly)$" => { ..item, http_only: Some(true) }
+        re"^(?i:samesite)$" => {
+          let same_site = lexscan value with longest {
+            re"^(?i:lax)$" => Some(Lax)
+            re"^(?i:strict)$" => Some(Strict)
+            re"^(?i:none)$" => Some(SameSiteNone)
             _ => None
           }
           { ..item, same_site, }
@@ -173,26 +173,31 @@ pub fn parse_cookie(cookie : StringView) -> Map[String, CookieItem] {
   for curr = cookie {
     // TODO: more spec compliance
     // https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#attributes
-    lexmatch curr with longest {
-      ("[ \t]+", rest) => continue rest
+    lexscan curr with longest {
+      (re"^[ \t]+", after=rest) => continue rest
       (
-        ("[^ \t=;]([ \t]*[^ \t=;])*" as key)
-        "[ \t]*"
-        "="
-        "[ \t]*"
-        ("[^ \t;]([ \t]*[^ \t;])*" as value)
-        "[ \t]*"
-        ";?",
-        rest
+        (re"^[^ \t=;]([ \t]*[^ \t=;])*" as key) +
+        re"[ \t]*" +
+        re"=" +
+        re"[ \t]*" +
+        (re"[^ \t;]([ \t]*[^ \t;])*" as value) +
+        re"[ \t]*" +
+        re";?",
+        after=rest,
       ) => {
         on_key_value(key, value)
         continue rest
       }
-      (("[^ \t=;]([ \t]*[^ \t=;])*" as key) "[ \t]*" "(=[ \t]*)?" ";?", rest) => {
+      (
+        (re"^[^ \t=;]([ \t]*[^ \t=;])*" as key) +
+        re"[ \t]*" +
+        re"(=[ \t]*)?" +
+        re";?",
+        after=rest,
+      ) => {
         on_key_value(key, "")
         continue rest
       }
-      "" => break
       _ => break
     }
   }
