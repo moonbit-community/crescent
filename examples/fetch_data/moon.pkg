@@ -3,4 +3,6 @@ import {
   "bobzhang/crescent/fetch",
 }
 
+supported_targets = "-all+native+wasm"
+
 pkgtype(kind: "executable")

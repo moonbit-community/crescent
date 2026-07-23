@@ -8,4 +8,6 @@ import {
   "bobzhang/crescent/test_client",
 } for "test"
 
+supported_targets = "-all+native+wasm"
+
 warnings = "+missing_doc+unnecessary_annotation+74"

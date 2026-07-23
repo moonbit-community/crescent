@@ -4,7 +4,6 @@ on:
   push:
     branches: [main, master]
   pull_request:
-    branches: [main, master]
   workflow_dispatch:
 
 jobs:
@@ -30,7 +29,9 @@ jobs:
         run: moon check --deny-warn --target native --warn-list=-ambiguous_braces-lexmatch_longest_match
 
       - name: moon build
-        run: moon build --target native
+        run: |
+          moon build --target native
+          moon build --target wasm
 
       - name: moon info
         run: |
@@ -49,3 +50,6 @@ jobs:
         run: |
           moon test --target native
           moon test --target native
+
+      - name: moon test (wasm)
+        run: moon test --target wasm

@@ -1,3 +1,5 @@
+/// HTTP fetch implementation shared by the native and wasm1 targets.
+
 ///|
 priv enum FetchProtocol {
   Http

@@ -33,17 +33,17 @@ import {
   "moonbitlang/core/debug",
 } for "wbtest"
 
+supported_targets = "-all+native+wasm"
+
 warnings = "+missing_doc+unnecessary_annotation"
 
-// Target enablement is intentionally deferred. Files using the `.native.mbt`
-// extension are auto-restricted to native; the entries below cover test files
-// where MoonBit has no native-only naming convention.
+// These integration tests use native process and socket facilities that are not
+// available to the wasm1 test runner.
 
 options(
   targets: {
     "fetch_integration_test.mbt": [ "native" ],
     "serve_async_integration_test.mbt": [ "native" ],
     "serve_integration_test.mbt": [ "native" ],
-    "websocket_async_native_wbtest.mbt": [ "native" ],
   },
 )
