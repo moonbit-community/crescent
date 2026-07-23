@@ -149,7 +149,7 @@ pub impl ServeStaticProvider for StaticFileProvider with fn get_contents(
           let headers = try {
             let size = file.size()
             let (mtime_sec, mtime_nsec) = file.mtime()
-            let headers : Map[String, String] = {}
+            let headers : Map[String, String] = Map([])
             headers.set("Content-Length", size.to_string())
             headers.set("ETag", static_asset_etag(mtime_sec, mtime_nsec, size))
             headers

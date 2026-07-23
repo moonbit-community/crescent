@@ -97,7 +97,7 @@ test "find_header_key_case_insensitive returns None for missing key" {
 
 ///|
 test "find_header_key_case_insensitive empty map" {
-  let headers : Map[String, String] = {}
+  let headers : Map[String, String] = Map([])
   debug_inspect(
     find_header_key_case_insensitive(headers, "Host"),
     content="None",
@@ -208,7 +208,7 @@ pub fn merge_headers_case_insensitive(
 ///|
 /// Returns a shallow copy of the headers map.
 pub fn copy_headers(headers : Map[String, String]) -> Map[String, String] {
-  let out : Map[String, String] = {}
+  let out : Map[String, String] = Map([])
   headers.each((k, v) => out.set(k, v))
   out
 }

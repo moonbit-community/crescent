@@ -120,7 +120,7 @@ fn HttpRequest::cached_query(self : HttpRequest) -> Map[String, String] {
 /// calling this multiple times only parses the URL once.
 pub fn HttpRequest::query_params(self : HttpRequest) -> Map[String, String] {
   let cached = self.cached_query()
-  let copy : Map[String, String] = {}
+  let copy : Map[String, String] = Map([])
   cached.each((k, v) => copy[k] = v)
   copy
 }

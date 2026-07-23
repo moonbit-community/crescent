@@ -78,7 +78,7 @@ fn match_compiled_segments(
   // Path exhausted but template remains
   if path_idx >= path_parts.length() {
     return if segments[seg_idx] is GlobStar {
-      let trial_params : Map[String, StringView] = {}
+      let trial_params : Map[String, StringView] = Map([])
       params.each((key, value) => trial_params.set(key, value))
       trial_params.set("_", "")
       match_compiled_segments(
@@ -137,7 +137,7 @@ fn match_compiled_segments(
           matched_segments.push(path_parts[i])
           i = i + 1
         }
-        let trial_params : Map[String, StringView] = {}
+        let trial_params : Map[String, StringView] = Map([])
         params.each((key, value) => trial_params.set(key, value))
         trial_params.set("_", matched_segments.join("/"))
         match

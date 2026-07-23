@@ -140,7 +140,7 @@ async fn send_native_ws_shutdown_close(ws : @async_websocket.Conn) -> Unit {
 fn normalize_native_websocket_request_headers(
   headers : Map[String, String],
 ) -> Map[String, String] {
-  let normalized : Map[String, String] = {}
+  let normalized : Map[String, String] = Map([])
   headers.each((key, value) => {
     let normalized_value = match key.to_lower() {
       "connection" =>
