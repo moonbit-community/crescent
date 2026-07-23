@@ -26,6 +26,7 @@ pub async fn App::dispatch(
   // Execute middleware chain + handler
   let responder = execute_middlewares(self.middlewares, event, handler)
   finalize_response_body(event.res, responder)
+  append_cookie_headers(event.res.headers, event.res.cookies)
   // HEAD responses carry headers but no body bytes on the wire. Match the
   // live send_raw_response_async path: synthesize Content-Length from the
   // materialized body (unless the handler already set it), THEN drop the
