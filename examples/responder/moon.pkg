@@ -4,4 +4,6 @@ import {
   "moonbitlang/core/json",
 }
 
+supported_targets = "-all+native+wasm"
+
 pkgtype(kind: "executable")

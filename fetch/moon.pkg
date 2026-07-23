@@ -8,4 +8,6 @@ import {
   "moonbitlang/core/test",
 }
 
+supported_targets = "-all+native+wasm"
+
 warnings = "+missing_doc+unnecessary_annotation+74"

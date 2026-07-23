@@ -352,6 +352,9 @@ graph LR
 | `moonbitlang/x`     | 0.4.41  | Extended standard library utilities      |
 | `moonbitlang/async`  | 0.20.3  | Cooperative async runtime, TCP, HTTP/WS  |
 
+Crescent's runtime packages support the native and wasm1 targets. JS and
+wasm-gc are not supported.
+
 ---
 
 ## 5. The Life of a Request

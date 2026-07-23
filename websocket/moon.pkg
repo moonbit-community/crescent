@@ -11,10 +11,6 @@ import {
   "moonbitlang/async/os_error",
 } for "wbtest"
 
+supported_targets = "-all+native+wasm"
+
 warnings = "+missing_doc+unnecessary_annotation"
-
-// Native-only (depends on moonbitlang/async/{http,websocket}).
-
-options(
-  targets: { "runtime_wbtest.mbt": [ "native" ] },
-)

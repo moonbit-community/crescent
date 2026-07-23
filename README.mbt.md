@@ -1,13 +1,14 @@
 # Crescent
 
-A web framework for MoonBit. Native-first, type-safe, AI-agent friendly.
+A web framework for MoonBit. Type-safe and AI-agent friendly.
 
 > Hard fork of [oboard/mocket](https://github.com/oboard/mocket) by
 > [oboard](https://github.com/oboard). [Credits](#credits) at the bottom.
 
-> **Target:** native only. Use `moon build`/`moon test` (which default to the
-> preferred target declared in `moon.mod`) or pass `--target native`
-> explicitly.
+> **Targets:** native and wasm1 (`--target wasm`). The HTTP server, fetch,
+> WebSocket, and static-file packages use `moonbitlang/async` on both targets.
+> JS and wasm-gc are not supported. Native remains the preferred target in
+> `moon.mod`.
 
 ## Install
 
@@ -80,10 +81,10 @@ test "json_value sets content-type and serializes body" {
     ),
   )
 
-  inspect(
+  debug_inspect(
     @utf8.decode(res.raw_body),
     content=(
-      #|{"name":"Alice","age":30}
+      #|"{\"name\":\"Alice\",\"age\":30}"
     ),
   )
 }

@@ -3,4 +3,6 @@ import {
   "moonbitlang/async",
 }
 
+supported_targets = "-all+native+wasm"
+
 pkgtype(kind: "executable")
