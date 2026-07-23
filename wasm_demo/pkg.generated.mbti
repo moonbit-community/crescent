@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/crescent_wasm_demo"
+
+import {
+  "bobzhang/crescent",
+}
+
+// Values
+pub fn make_app() -> @crescent.App
+
+pub async fn run(port~ : Int) -> Unit
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
