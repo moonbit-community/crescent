@@ -1,0 +1,10 @@
+import {
+  "bobzhang/crescent",
+}
+
+import {
+  "bobzhang/crescent/test_client",
+  "moonbitlang/async",
+} for "test"
+
+supported_targets = "-all+native+wasm"

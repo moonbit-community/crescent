@@ -1,0 +1,8 @@
+import {
+  "bobzhang/crescent_wasm_demo" @demo,
+  "moonbitlang/async",
+}
+
+pkgtype(kind: "executable")
+
+supported_targets = "-all+native+wasm"
