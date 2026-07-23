@@ -119,7 +119,7 @@ is a no-op, and if the header doesn't exist yet, it is created.
 ```mbt check
 ///|
 test "append_token_case_insensitive deduplicates" {
-  let headers : Map[String, String] = {}
+  let headers : Map[String, String] = Map([])
   @httputil.append_token_case_insensitive(headers, "Vary", "Origin")
   @httputil.append_token_case_insensitive(headers, "Vary", "Origin") // duplicate, ignored
   @httputil.append_token_case_insensitive(headers, "Vary", "Accept-Encoding")

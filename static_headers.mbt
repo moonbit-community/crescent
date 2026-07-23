@@ -138,7 +138,7 @@ fn static_asset_headers(
   id : String,
   meta : StaticAssetMeta,
 ) -> Map[String, String] {
-  let headers : Map[String, String] = {}
+  let headers : Map[String, String] = Map([])
   match meta.etag {
     Some(etag) => headers.set("ETag", etag)
     None => ()

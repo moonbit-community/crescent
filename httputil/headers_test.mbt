@@ -22,7 +22,7 @@ test "get_header_case_insensitive returns None for missing" {
 
 ///|
 test "get_header_case_insensitive empty map" {
-  let headers : Map[String, String] = {}
+  let headers : Map[String, String] = Map([])
   debug_inspect(
     get_header_case_insensitive(headers, "Content-Type"),
     content="None",
@@ -45,13 +45,13 @@ test "has_header_case_insensitive returns false for missing" {
 
 ///|
 test "has_header_case_insensitive empty map" {
-  let headers : Map[String, String] = {}
+  let headers : Map[String, String] = Map([])
   assert_eq(has_header_case_insensitive(headers, "Host"), false)
 }
 
 ///|
 test "set_header_case_insensitive adds new header" {
-  let headers : Map[String, String] = {}
+  let headers : Map[String, String] = Map([])
   set_header_case_insensitive(headers, "Content-Type", "text/html")
   debug_inspect(headers.get("Content-Type"), content="Some(\"text/html\")")
 }
@@ -94,7 +94,7 @@ test "set_header_case_insensitive with multiple headers" {
 
 ///|
 test "set_missing_header_case_insensitive adds when absent" {
-  let headers : Map[String, String] = {}
+  let headers : Map[String, String] = Map([])
   set_missing_header_case_insensitive(headers, "Content-Type", "text/html")
   debug_inspect(headers.get("Content-Type"), content="Some(\"text/html\")")
 }
@@ -121,7 +121,7 @@ test "set_missing_header_case_insensitive does not overwrite case-insensitive ma
 
 ///|
 test "set_missing_header_case_insensitive adds multiple distinct headers" {
-  let headers : Map[String, String] = {}
+  let headers : Map[String, String] = Map([])
   set_missing_header_case_insensitive(headers, "Host", "example.com")
   set_missing_header_case_insensitive(headers, "Accept", "text/html")
   assert_eq(headers.length(), 2)
@@ -131,7 +131,7 @@ test "set_missing_header_case_insensitive adds multiple distinct headers" {
 
 ///|
 test "merge_headers_case_insensitive into empty target" {
-  let target : Map[String, String] = {}
+  let target : Map[String, String] = Map([])
   let source : Map[String, String] = {
     "Host": "example.com",
     "Accept": "text/html",
@@ -145,7 +145,7 @@ test "merge_headers_case_insensitive into empty target" {
 ///|
 test "merge_headers_case_insensitive from empty source" {
   let target : Map[String, String] = { "Host": "example.com" }
-  let source : Map[String, String] = {}
+  let source : Map[String, String] = Map([])
   merge_headers_case_insensitive(target, source)
   assert_eq(target.length(), 1)
   debug_inspect(target.get("Host"), content="Some(\"example.com\")")

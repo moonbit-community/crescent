@@ -46,7 +46,7 @@ pub fn parse_multipart(
   bytes : BytesView,
   boundary : String,
 ) -> Map[String, Array[MultipartFormValue]] {
-  let res : Map[String, Array[MultipartFormValue]] = {}
+  let res : Map[String, Array[MultipartFormValue]] = Map([])
   let boundary_bytes = @utf8.encode("--" + boundary)
   let boundary_len = boundary_bytes.length()
   let len = bytes.length()
