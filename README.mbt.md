@@ -5,11 +5,9 @@ A web framework for MoonBit. Native-first, type-safe, AI-agent friendly.
 > Hard fork of [oboard/mocket](https://github.com/oboard/mocket) by
 > [oboard](https://github.com/oboard). [Credits](#credits) at the bottom.
 
-> **Target:** native only. Crescent's HTTP/WebSocket runtime depends on
-> `moonbitlang/async/{http,socket,websocket}`, which are not available on the
-> wasm or js targets. Use `moon build`/`moon test` (which default to the
-> `preferred-target: "native"` declared in `moon.mod.json`) or pass
-> `--target native` explicitly.
+> **Target:** native only. Use `moon build`/`moon test` (which default to the
+> preferred target declared in `moon.mod`) or pass `--target native`
+> explicitly.
 
 ## Install
 
@@ -496,21 +494,20 @@ directory index fallback (`index.html`, `index.htm`, ...).
 ```moonbit nocheck
 ///|
 pub(open) trait ServeStaticProvider {
-  async get_meta(Self, String) -> StaticAssetMeta?
-  async get_contents(Self, String) -> &Responder
-  get_type(Self, String) -> String?
-  get_encodings(Self) -> Map[String, String]
-  get_index_names(Self) -> Array[String]
-  get_fallthrough(Self) -> Bool
+  async fn get_meta(Self, String) -> StaticAssetMeta?
+  async fn get_contents(Self, String) -> &Responder
+  fn get_type(Self, String) -> String?
+  fn get_encodings(Self) -> Map[String, String]
+  fn get_index_names(Self) -> Array[String]
+  fn get_fallthrough(Self) -> Bool
 }
 ```
 
 `static_assets` accepts any type that implements `ServeStaticProvider`. The
-bundled `@static_file.StaticFileProvider` serves from the filesystem, but
-custom providers can pull from S3, an embedded asset bundle, a zip file, a
-CDN cache, etc. The path argument to each method is the asset's URL path
-(already stripped of the mount prefix and resolved against any index
-filenames).
+bundled `@static_file.StaticFileProvider` serves from the filesystem, but custom
+providers can pull from S3, an embedded asset bundle, a zip file, a CDN cache,
+etc. The path argument to each method is the asset's URL path (already stripped
+of the mount prefix and resolved against any index filenames).
 
 | Method             | Purpose                                                        |
 | ------------------ | -------------------------------------------------------------- |
@@ -621,7 +618,7 @@ Methods: `@fetch.get`, `@fetch.post`, `@fetch.put`, `@fetch.patch`,
 
 ```moonbit nocheck
   let addr = @socket.Addr::parse("0.0.0.0:4000")
-  let server = @http.Server::new(addr, reuse_addr=true)
+  let server = @http.Server(addr, reuse_addr=true)
   app.serve_on(server)
 ```
 
@@ -781,8 +778,7 @@ test "require_param raises on missing" {
     res: HttpResponse(status_code=OK),
     params: {},
   }
-  let result = try? event.require_param_int("id")
-  assert_true(result is Err(_))
+  @test.assert_raise(() => event.require_param_int("id"))
 }
 ```
 

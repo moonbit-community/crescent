@@ -5,8 +5,13 @@ test "param returns string value" {
     res: HttpResponse(status_code=OK),
     params: { "id": "42" },
   }
-  inspect(event.param("id"), content="Some(\"42\")")
-  inspect(event.param("missing"), content="None")
+  debug_inspect(
+    event.param("id"),
+    content=(
+      #|Some(<StringView: "42">)
+    ),
+  )
+  debug_inspect(event.param("missing"), content="None")
 }
 
 ///|
@@ -16,8 +21,8 @@ test "param_int parses integer" {
     res: HttpResponse(status_code=OK),
     params: { "id": "123" },
   }
-  inspect(event.param_int("id"), content="Some(123)")
-  inspect(event.param_int("missing"), content="None")
+  debug_inspect(event.param_int("id"), content="Some(123)")
+  debug_inspect(event.param_int("missing"), content="None")
 }
 
 ///|
@@ -27,7 +32,7 @@ test "param_int returns none for non-integer" {
     res: HttpResponse(status_code=OK),
     params: { "id": "abc" },
   }
-  inspect(event.param_int("id"), content="None")
+  debug_inspect(event.param_int("id"), content="None")
 }
 
 ///|
@@ -48,8 +53,7 @@ test "require_param raises HttpError when missing" {
     res: HttpResponse(status_code=OK),
     params: {},
   }
-  let result = try? event.require_param("id")
-  assert_true(result is Err(_))
+  @test.assert_raise(() => event.require_param("id"))
 }
 
 ///|
@@ -70,8 +74,7 @@ test "require_param_int raises on missing param" {
     res: HttpResponse(status_code=OK),
     params: {},
   }
-  let result = try? event.require_param_int("id")
-  assert_true(result is Err(_))
+  @test.assert_raise(() => event.require_param_int("id"))
 }
 
 ///|
@@ -81,8 +84,7 @@ test "require_param_int raises on non-integer value" {
     res: HttpResponse(status_code=OK),
     params: { "id": "abc" },
   }
-  let result = try? event.require_param_int("id")
-  assert_true(result is Err(_))
+  @test.assert_raise(() => event.require_param_int("id"))
 }
 
 ///|
@@ -103,8 +105,7 @@ test "require_param_int64 raises on non-integer" {
     res: HttpResponse(status_code=OK),
     params: { "id": "not-a-number" },
   }
-  let result = try? event.require_param_int64("id")
-  assert_true(result is Err(_))
+  @test.assert_raise(() => event.require_param_int64("id"))
 }
 
 ///|

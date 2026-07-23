@@ -15,18 +15,7 @@ struct Todo {
   id : Int
   title : String
   done : Bool
-} derive(ToJson, FromJson, Eq)
-
-///|
-impl Show for Todo with output(self, logger) {
-  logger.write_string("Todo { id: ")
-  logger.write_object(self.id)
-  logger.write_string(", title: ")
-  logger.write_object(self.title)
-  logger.write_string(", done: ")
-  logger.write_object(self.done)
-  logger.write_string(" }")
-}
+} derive(ToJson, FromJson, Eq, Debug)
 
 ///|
 #warnings("-unnecessary_annotation")
@@ -41,16 +30,7 @@ struct UserProfile {
   name : String
   email : String
   tags : Array[String]
-} derive(ToJson, FromJson, Eq)
-
-///|
-impl Show for UserProfile with output(self, logger) {
-  logger.write_string("UserProfile { id: ")
-  logger.write_object(self.id)
-  logger.write_string(", name: ")
-  logger.write_object(self.name)
-  logger.write_string(" }")
-}
+} derive(ToJson, FromJson, Eq, Debug)
 
 ///|
 #warnings("-unnecessary_annotation")
@@ -75,7 +55,7 @@ fn build_todo_app() -> @crescent.App {
     { id: 1, title: "Learn MoonBit", done: true },
     { id: 2, title: "Build web app", done: false },
   ]
-  let next_id = Ref::new(3)
+  let next_id = Ref(3)
 
   // List todos
   app.get_raw("/api/todos", _ => @crescent.HttpResponse::ok().json_value(todos))
@@ -121,7 +101,7 @@ async test "full-stack: list todos returns json array" {
   let client = @test_client.TestClient(build_todo_app())
   let res = client.get("/api/todos")
   assert_eq(res.status, OK)
-  inspect(
+  debug_inspect(
     res.headers.get("Content-Type"),
     content="Some(\"application/json; charset=utf-8\")",
   )

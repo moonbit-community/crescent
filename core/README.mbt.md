@@ -216,11 +216,11 @@ test "fluent response building" {
     .header("X-Request-Id", "abc-123")
     .body(@core.html("<h1>Hello</h1>"))
   assert_eq(res.status_code, OK)
-  inspect(
+  debug_inspect(
     res.headers.get("Content-Type"),
     content="Some(\"text/html; charset=utf-8\")",
   )
-  inspect(res.headers.get("X-Request-Id"), content="Some(\"abc-123\")")
+  debug_inspect(res.headers.get("X-Request-Id"), content="Some(\"abc-123\")")
 }
 ```
 
@@ -233,7 +233,7 @@ Both set `Content-Type: application/json; charset=utf-8`:
 ///|
 test "json response sets content type and body" {
   let res = @core.HttpResponse::ok().json(({ "status": "ok" } : Json))
-  inspect(
+  debug_inspect(
     res.headers.get("Content-Type"),
     content="Some(\"application/json; charset=utf-8\")",
   )
@@ -352,9 +352,9 @@ so user code is free to add new implementations.
 ```moonbit nocheck
 ///|
 pub(open) trait Responder {
-  options(Self, HttpResponse) -> Unit
-  output(Self, Buffer) -> Unit
-  output_bytes(Self) -> Bytes?
+  fn options(Self, HttpResponse) -> Unit
+  fn output(Self, Buffer) -> Unit
+  fn output_bytes(Self) -> Bytes?
 }
 ```
 
@@ -408,11 +408,11 @@ test "html helper sets text/html content type" {
   let res = @core.HttpResponse(status_code=OK)
   let responder = @core.html("<h1>Hello</h1>")
   responder.options(res)
-  inspect(
+  debug_inspect(
     res.headers.get("Content-Type"),
     content="Some(\"text/html; charset=utf-8\")",
   )
-  let buf = @buffer.new()
+  let buf = Buffer()
   responder.output(buf)
   assert_eq(buf.contents(), @utf8.encode("<h1>Hello</h1>"))
 }
@@ -423,7 +423,7 @@ test "html helper sets text/html content type" {
 ```moonbit nocheck
 ///|
 pub(open) trait BodyReader {
-  from_request(HttpRequest) -> Self raise
+  fn from_request(HttpRequest) -> Self raise
 }
 ```
 

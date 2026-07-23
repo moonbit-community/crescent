@@ -53,7 +53,7 @@ pub fn HttpRequest::method_string(self : HttpRequest) -> String {
 ///|
 /// Trait for types that can be deserialized from an HTTP request body.
 pub(open) trait BodyReader {
-  from_request(req : HttpRequest) -> Self raise
+  fn from_request(req : HttpRequest) -> Self raise
 }
 
 ///|
@@ -227,31 +227,31 @@ test "request target helpers expose path and query" {
 }
 
 ///|
-pub impl BodyReader for String with from_request(req : HttpRequest) -> String raise {
+pub impl BodyReader for String with fn from_request(req : HttpRequest) -> String raise {
   // Strict UTF-8 decoding — raises on invalid bytes.
   // For UTF-16 payloads, decode manually via a dedicated helper.
   @utf8.decode(req.raw_body)
 }
 
 ///|
-pub impl BodyReader for Json with from_request(req : HttpRequest) -> Json raise {
+pub impl BodyReader for Json with fn from_request(req : HttpRequest) -> Json raise {
   @json.parse(@utf8.decode(req.raw_body))
 }
 
 ///|
-pub impl BodyReader for Bytes with from_request(req : HttpRequest) -> Bytes raise {
+pub impl BodyReader for Bytes with fn from_request(req : HttpRequest) -> Bytes raise {
   req.raw_body
 }
 
 ///|
-pub impl BodyReader for FixedArray[Byte] with from_request(req : HttpRequest) -> FixedArray[
+pub impl BodyReader for FixedArray[Byte] with fn from_request(req : HttpRequest) -> FixedArray[
   Byte,
 ] raise {
   req.raw_body.to_fixedarray()
 }
 
 ///|
-pub impl BodyReader for Array[Byte] with from_request(req : HttpRequest) -> Array[
+pub impl BodyReader for Array[Byte] with fn from_request(req : HttpRequest) -> Array[
   Byte,
 ] raise {
   req.raw_body.to_array()
@@ -259,18 +259,13 @@ pub impl BodyReader for Array[Byte] with from_request(req : HttpRequest) -> Arra
 
 ///|
 test "read_body" {
-  let req = HttpRequest(
-    Post,
-    "/",
-    Map::new(),
-    raw_body=b"{\"Hello\":\"World!\"}",
-  )
+  let req = HttpRequest(Post, "/", Map([]), raw_body=b"{\"Hello\":\"World!\"}")
   let text : String = req.body()
   let json : Json = req.body()
-  inspect(
+  debug_inspect(
     text,
     content=(
-      #|{"Hello":"World!"}
+      #|"{\"Hello\":\"World!\"}"
     ),
   )
   json_inspect(json, content={ "Hello": "World!" })
@@ -281,14 +276,7 @@ test "read_body" {
 struct TryJsonTestUser {
   name : String
   age : Int
-} derive(FromJson, ToJson, Eq)
-
-///|
-impl Show for TryJsonTestUser with output(self, logger) {
-  logger.write_string(
-    "TryJsonTestUser { name: \{self.name}, age: \{self.age} }",
-  )
-}
+} derive(FromJson, ToJson, Eq, Debug)
 
 ///|
 test "try_json returns Ok on valid json" {

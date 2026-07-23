@@ -98,10 +98,10 @@ fn parse_disposition_value(directive : String, key : String) -> String? {
   // Quoted value
   if rest.length() >= 2 &&
     rest.has_prefix("\"") &&
-    rest.view().to_string().has_suffix("\"") {
-    Some(rest[1:rest.length() - 1].to_string())
+    rest.view().to_owned().has_suffix("\"") {
+    Some(rest[1:rest.length() - 1].to_owned())
   } else {
-    Some(rest.to_string())
+    Some(rest.to_owned())
   }
 }
 
@@ -113,8 +113,8 @@ fn parse_disposition_value(directive : String, key : String) -> String? {
 fn split_header_line(line : String) -> (String, String)? {
   match line.find(":") {
     Some(idx) => {
-      let key = line[:idx].trim(chars=" \t").to_string()
-      let value = line[idx + 1:].trim(chars=" \t").to_string()
+      let key = line[:idx].trim(chars=" \t").to_owned()
+      let value = line[idx + 1:].trim(chars=" \t").to_owned()
       Some((key, value))
     }
     None => None
@@ -137,7 +137,7 @@ fn split_semicolon_quoted(input : String) -> Array[String] {
     if c == '"' {
       in_quote = !in_quote
     } else if c == ';' && !in_quote {
-      let piece = view[start:i].trim(chars=" \t").to_string()
+      let piece = view[start:i].trim(chars=" \t").to_owned()
       if piece != "" {
         result.push(piece)
       }
@@ -145,7 +145,7 @@ fn split_semicolon_quoted(input : String) -> Array[String] {
     }
   }
   if start < len {
-    let piece = view[start:len].trim(chars=" \t").to_string()
+    let piece = view[start:len].trim(chars=" \t").to_owned()
     if piece != "" {
       result.push(piece)
     }
@@ -180,7 +180,7 @@ fn parse_multipart_part(
   let mut filename : String? = None
   let mut content_type : String? = None
   for header in headers {
-    match split_header_line(header.to_string()) {
+    match split_header_line(header.to_owned()) {
       Some((key, val)) => {
         let lkey = key.to_lower()
         if lkey == "content-disposition" {

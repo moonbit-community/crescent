@@ -18,7 +18,7 @@ pub(all) enum HttpMethod {
 } derive(Eq, Debug)
 
 ///|
-pub impl Show for HttpMethod with output(self, logger) {
+pub impl Show for HttpMethod with fn output(self, logger) {
   logger.write_string(self.to_method_string())
 }
 

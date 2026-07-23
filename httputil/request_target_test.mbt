@@ -1,67 +1,161 @@
 ///|
 test "request_target_path extracts path from plain path" {
-  inspect(request_target_path("/"), content="/")
-  inspect(request_target_path("/index.html"), content="/index.html")
-  inspect(request_target_path("/a/b/c"), content="/a/b/c")
+  debug_inspect(
+    request_target_path("/"),
+    content=(
+      #|"/"
+    ),
+  )
+  debug_inspect(
+    request_target_path("/index.html"),
+    content=(
+      #|"/index.html"
+    ),
+  )
+  debug_inspect(
+    request_target_path("/a/b/c"),
+    content=(
+      #|"/a/b/c"
+    ),
+  )
 }
 
 ///|
 test "request_target_path strips query string" {
-  inspect(request_target_path("/search?q=hello"), content="/search")
-  inspect(request_target_path("/?key=val"), content="/")
-  inspect(request_target_path("/a/b?x=1&y=2"), content="/a/b")
+  debug_inspect(
+    request_target_path("/search?q=hello"),
+    content=(
+      #|"/search"
+    ),
+  )
+  debug_inspect(
+    request_target_path("/?key=val"),
+    content=(
+      #|"/"
+    ),
+  )
+  debug_inspect(
+    request_target_path("/a/b?x=1&y=2"),
+    content=(
+      #|"/a/b"
+    ),
+  )
 }
 
 ///|
 test "request_target_path strips fragment" {
-  inspect(request_target_path("/page#section"), content="/page")
-  inspect(request_target_path("/#top"), content="/")
+  debug_inspect(
+    request_target_path("/page#section"),
+    content=(
+      #|"/page"
+    ),
+  )
+  debug_inspect(
+    request_target_path("/#top"),
+    content=(
+      #|"/"
+    ),
+  )
 }
 
 ///|
 test "request_target_path strips query and fragment" {
-  inspect(request_target_path("/page?q=1#frag"), content="/page")
-  inspect(request_target_path("/a/b?x=1&y=2#z"), content="/a/b")
+  debug_inspect(
+    request_target_path("/page?q=1#frag"),
+    content=(
+      #|"/page"
+    ),
+  )
+  debug_inspect(
+    request_target_path("/a/b?x=1&y=2#z"),
+    content=(
+      #|"/a/b"
+    ),
+  )
 }
 
 ///|
 test "request_target_path with fragment before query uses earliest delimiter" {
   // '#' appears before '?' so path ends at '#'
-  inspect(request_target_path("/page#frag?q=1"), content="/page")
+  debug_inspect(
+    request_target_path("/page#frag?q=1"),
+    content=(
+      #|"/page"
+    ),
+  )
 }
 
 ///|
 test "request_target_path with empty path" {
-  inspect(request_target_path(""), content="")
+  debug_inspect(
+    request_target_path(""),
+    content=(
+      #|""
+    ),
+  )
 }
 
 ///|
 test "request_target_path extracts path from absolute-form URLs" {
   // Regression test: previously the "//" normalization collapsed the scheme
   // separator, turning "http://host/path" into "http:/host/path"
-  inspect(request_target_path("http://example.com/path"), content="/path")
-  inspect(
+  debug_inspect(
+    request_target_path("http://example.com/path"),
+    content=(
+      #|"/path"
+    ),
+  )
+  debug_inspect(
     request_target_path("https://api.example.com/users/42"),
-    content="/users/42",
+    content=(
+      #|"/users/42"
+    ),
   )
-  inspect(
+  debug_inspect(
     request_target_path("http://example.com/search?q=hello"),
-    content="/search",
+    content=(
+      #|"/search"
+    ),
   )
-  inspect(request_target_path("https://example.com/page#frag"), content="/page")
+  debug_inspect(
+    request_target_path("https://example.com/page#frag"),
+    content=(
+      #|"/page"
+    ),
+  )
 }
 
 ///|
 test "request_target_path absolute-form without path returns /" {
-  inspect(request_target_path("http://example.com"), content="/")
-  inspect(request_target_path("https://api.example.com"), content="/")
+  debug_inspect(
+    request_target_path("http://example.com"),
+    content=(
+      #|"/"
+    ),
+  )
+  debug_inspect(
+    request_target_path("https://api.example.com"),
+    content=(
+      #|"/"
+    ),
+  )
 }
 
 ///|
 test "request_target_path still normalizes path double-slashes" {
   // //internal// path segments should still collapse
-  inspect(request_target_path("/a//b"), content="/a/b")
-  inspect(request_target_path("//foo"), content="/foo")
+  debug_inspect(
+    request_target_path("/a//b"),
+    content=(
+      #|"/a/b"
+    ),
+  )
+  debug_inspect(
+    request_target_path("//foo"),
+    content=(
+      #|"/foo"
+    ),
+  )
 }
 
 ///|

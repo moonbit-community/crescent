@@ -130,7 +130,7 @@ pub(all) enum StatusCode {
 } derive(Debug, ToJson, Eq)
 
 ///|
-pub impl Show for StatusCode with output(self, logger) {
+pub impl Show for StatusCode with fn output(self, logger) {
   match self {
     Continue => logger.write_string("Continue")
     SwitchingProtocols => logger.write_string("SwitchingProtocols")
@@ -348,7 +348,7 @@ pub fn StatusCode::to_int(self : StatusCode) -> Int {
 
 ///|
 test {
-  inspect(StatusCode::OK.to_int(), content="200")
-  inspect(StatusCode::from_int(200), content="OK")
-  inspect(StatusCode::from_int(599), content="Custom(599)")
+  debug_inspect(StatusCode::OK.to_int(), content="200")
+  debug_inspect(StatusCode::from_int(200), content="OK")
+  debug_inspect(StatusCode::from_int(599), content="Custom(599)")
 }

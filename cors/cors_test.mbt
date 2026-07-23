@@ -74,7 +74,7 @@ test "origin=* without credentials stays as *" {
 
 ///|
 test "is_preflight_request requires cors headers and options" {
-  inspect(
+  debug_inspect(
     is_preflight_request(
       make_event(Options, {
         "origin": "https://example.com",
@@ -83,13 +83,13 @@ test "is_preflight_request requires cors headers and options" {
     ),
     content="true",
   )
-  inspect(
+  debug_inspect(
     is_preflight_request(
       make_event(Options, { "origin": "https://example.com" }),
     ),
     content="false",
   )
-  inspect(
+  debug_inspect(
     is_preflight_request(
       make_event(Get, {
         "origin": "https://example.com",
@@ -111,17 +111,11 @@ async fn allocate_test_server() -> @http.Server {
   let addr = @socket.Addr::parse("127.0.0.1:0") catch {
     _ => raise SocketBindUnavailable
   }
-  let bind_check : Result[@http.Server, Error] = try? @http.Server::new(
-    addr,
-    reuse_addr=true,
-  )
-  match bind_check {
-    Ok(server) => server
-    Err(@os_error.OSError(errno, ..)) if errno == 1 =>
+  @http.Server(addr, reuse_addr=true) catch {
+    @os_error.OSError(errno, ..) if errno == 1 => raise SocketBindUnavailable
+    @os_error.OSError(_) as err if err.is_EACCES() =>
       raise SocketBindUnavailable
-    Err(@os_error.OSError(_) as err) if err.is_EACCES() =>
-      raise SocketBindUnavailable
-    Err(err) => fail("unexpected bind check failure: \{err}")
+    err => fail("unexpected bind check failure: \{err}")
   }
 }
 
@@ -160,7 +154,7 @@ async fn issue_request(
   path : String,
   headers? : Map[String, String],
 ) -> (@http.Response, Bytes) {
-  let client = @http.Client::new("http://127.0.0.1:\{port}")
+  let client = @http.Client("http://127.0.0.1:\{port}")
   defer client.close()
   client.request(meth, path, extra_headers=headers.unwrap_or({}))
   let response = client.end_request()
@@ -181,7 +175,7 @@ async fn issue_raw_request_headers(port : Int, request : String) -> String {
 
 ///|
 async test "handle_cors serves preflight requests through async server" {
-  let handler_called = Ref::new(false)
+  let handler_called = Ref(false)
   let app = @crescent.App()
   app.use_middleware(
     handle_cors(
@@ -214,7 +208,7 @@ async test "handle_cors serves preflight requests through async server" {
       } else {
       fail("missing expected preflight CORS headers")
     }
-    inspect(handler_called.val, content="false")
+    debug_inspect(handler_called.val, content="false")
   })
 }
 
@@ -253,7 +247,7 @@ async test "handle_cors decorates normal requests through async server" {
 
 ///|
 async test "handle_cors does not short-circuit non-preflight options" {
-  let handler_called = Ref::new(false)
+  let handler_called = Ref(false)
   let app = @crescent.App()
   app.use_middleware(
     handle_cors(
@@ -287,7 +281,7 @@ async test "handle_cors does not short-circuit non-preflight options" {
     }
     // non-preflight OPTIONS must NOT carry a preflight-only Max-Age
     assert_eq(response.headers.get("access-control-max-age"), None)
-    inspect(handler_called.val, content="true")
+    debug_inspect(handler_called.val, content="true")
   })
 }
 

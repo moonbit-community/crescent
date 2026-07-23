@@ -121,7 +121,7 @@ pub(all) enum NativeWebSocketOverflowPolicy {
 } derive(Debug, Eq)
 
 ///|
-pub impl Show for NativeWebSocketOverflowPolicy with output(self, logger) {
+pub impl Show for NativeWebSocketOverflowPolicy with fn output(self, logger) {
   match self {
     DropOldest => logger.write_string("DropOldest")
     DropLatest => logger.write_string("DropLatest")

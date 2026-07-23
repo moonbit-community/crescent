@@ -156,13 +156,13 @@ pub fn StatusCode::from_int(Int) -> Self
 pub fn StatusCode::to_int(Self) -> Int
 pub impl Show for StatusCode
 
-type TryJsonTestUser derive(Eq, ToJson, @json.FromJson)
+type TryJsonTestUser derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 // Type aliases
 
 // Traits
 pub(open) trait BodyReader {
-  from_request(HttpRequest) -> Self raise
+  fn from_request(HttpRequest) -> Self raise
 }
 pub impl BodyReader for String
 pub impl BodyReader for FixedArray[Byte]
@@ -171,9 +171,9 @@ pub impl BodyReader for Array[Byte]
 pub impl BodyReader for Json
 
 pub(open) trait Responder {
-  options(Self, HttpResponse) -> Unit
-  output(Self, @buffer.Buffer) -> Unit
-  output_bytes(Self) -> Bytes?
+  fn options(Self, HttpResponse) -> Unit
+  fn output(Self, @buffer.Buffer) -> Unit
+  fn output_bytes(Self) -> Bytes?
 }
 pub impl Responder for String
 pub impl Responder for Bytes

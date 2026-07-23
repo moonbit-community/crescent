@@ -49,7 +49,7 @@ pub fn HttpResponse::body(
   match body.output_bytes() {
     Some(bytes) => self.raw_body = bytes
     None => {
-      let buf = @buffer.new()
+      let buf = Buffer()
       body.output(buf)
       self.raw_body = buf.to_bytes()
     }
@@ -140,10 +140,10 @@ test "read_response_body" {
   let res = HttpResponse(status_code=OK, raw_body=b"{\"Hello\":\"Response\"}")
   let text : String = res.read_body()
   let json : Json = res.read_body()
-  inspect(
+  debug_inspect(
     text,
     content=(
-      #|{"Hello":"Response"}
+      #|"{\"Hello\":\"Response\"}"
     ),
   )
   json_inspect(json, content={ "Hello": "Response" })

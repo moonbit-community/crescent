@@ -161,11 +161,11 @@ pub using @core {trait Responder}
 
 // Traits
 pub(open) trait ServeStaticProvider {
-  async get_meta(Self, String) -> StaticAssetMeta? noraise
-  async get_contents(Self, String) -> &@core.Responder noraise
-  get_type(Self, String) -> String?
-  get_encodings(Self) -> Map[String, String]
-  get_index_names(Self) -> Array[String]
-  get_fallthrough(Self) -> Bool
+  async fn get_meta(Self, String) -> StaticAssetMeta? noraise
+  async fn get_contents(Self, String) -> &@core.Responder noraise
+  fn get_type(Self, String) -> String?
+  fn get_encodings(Self) -> Map[String, String]
+  fn get_index_names(Self) -> Array[String]
+  fn get_fallthrough(Self) -> Bool
 }
 

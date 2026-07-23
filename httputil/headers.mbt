@@ -71,7 +71,7 @@ fn find_header_key_case_insensitive(
 ///|
 test "find_header_key_case_insensitive finds exact key" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  inspect(
+  debug_inspect(
     find_header_key_case_insensitive(headers, "Content-Type"),
     content="Some(\"Content-Type\")",
   )
@@ -80,7 +80,7 @@ test "find_header_key_case_insensitive finds exact key" {
 ///|
 test "find_header_key_case_insensitive finds key case-insensitively" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  inspect(
+  debug_inspect(
     find_header_key_case_insensitive(headers, "content-type"),
     content="Some(\"Content-Type\")",
   )
@@ -89,13 +89,19 @@ test "find_header_key_case_insensitive finds key case-insensitively" {
 ///|
 test "find_header_key_case_insensitive returns None for missing key" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  inspect(find_header_key_case_insensitive(headers, "Accept"), content="None")
+  debug_inspect(
+    find_header_key_case_insensitive(headers, "Accept"),
+    content="None",
+  )
 }
 
 ///|
 test "find_header_key_case_insensitive empty map" {
   let headers : Map[String, String] = {}
-  inspect(find_header_key_case_insensitive(headers, "Host"), content="None")
+  debug_inspect(
+    find_header_key_case_insensitive(headers, "Host"),
+    content="None",
+  )
 }
 
 ///|
@@ -174,7 +180,7 @@ pub fn append_token_case_insensitive(
           // Check if token is already present.
           let mut already_present = false
           for part in value.split(",") {
-            if part.trim(chars=" \t").to_string().to_lower() == lower_token {
+            if part.trim(chars=" \t").to_owned().to_lower() == lower_token {
               already_present = true
               break
             }

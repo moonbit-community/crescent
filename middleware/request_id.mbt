@@ -1,5 +1,5 @@
 ///|
-let request_id_counter : Ref[Int64] = Ref::new(0L)
+let request_id_counter : Ref[Int64] = Ref(0L)
 
 ///|
 fn generate_request_id() -> String {

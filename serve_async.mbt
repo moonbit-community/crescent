@@ -15,15 +15,60 @@ fn request_method_to_string(meth : @http.RequestMethod) -> String {
 
 ///|
 test "request_method_to_string converts all HTTP methods" {
-  inspect(request_method_to_string(Get), content="GET")
-  inspect(request_method_to_string(Head), content="HEAD")
-  inspect(request_method_to_string(Post), content="POST")
-  inspect(request_method_to_string(Put), content="PUT")
-  inspect(request_method_to_string(Delete), content="DELETE")
-  inspect(request_method_to_string(Connect), content="CONNECT")
-  inspect(request_method_to_string(Options), content="OPTIONS")
-  inspect(request_method_to_string(Trace), content="TRACE")
-  inspect(request_method_to_string(Patch), content="PATCH")
+  debug_inspect(
+    request_method_to_string(Get),
+    content=(
+      #|"GET"
+    ),
+  )
+  debug_inspect(
+    request_method_to_string(Head),
+    content=(
+      #|"HEAD"
+    ),
+  )
+  debug_inspect(
+    request_method_to_string(Post),
+    content=(
+      #|"POST"
+    ),
+  )
+  debug_inspect(
+    request_method_to_string(Put),
+    content=(
+      #|"PUT"
+    ),
+  )
+  debug_inspect(
+    request_method_to_string(Delete),
+    content=(
+      #|"DELETE"
+    ),
+  )
+  debug_inspect(
+    request_method_to_string(Connect),
+    content=(
+      #|"CONNECT"
+    ),
+  )
+  debug_inspect(
+    request_method_to_string(Options),
+    content=(
+      #|"OPTIONS"
+    ),
+  )
+  debug_inspect(
+    request_method_to_string(Trace),
+    content=(
+      #|"TRACE"
+    ),
+  )
+  debug_inspect(
+    request_method_to_string(Patch),
+    content=(
+      #|"PATCH"
+    ),
+  )
 }
 
 /// Copies request headers from the async runtime.
@@ -36,7 +81,7 @@ fn copy_async_headers(headers : Map[String, String]) -> Map[String, String] {
 }
 
 ///|
-let ws_serve_runtime_counter : Ref[Int] = Ref::new(0)
+let ws_serve_runtime_counter : Ref[Int] = Ref(0)
 
 ///|
 fn next_ws_serve_runtime_id(app : App) -> String {
@@ -67,7 +112,7 @@ fn header_contains_token_case_insensitive(
 ///|
 test "header_contains_token_case_insensitive finds token in comma-separated list" {
   let headers : Map[String, String] = { "Connection": "keep-alive, Upgrade" }
-  inspect(
+  debug_inspect(
     header_contains_token_case_insensitive(headers, "Connection", "upgrade"),
     content="true",
   )
@@ -76,7 +121,7 @@ test "header_contains_token_case_insensitive finds token in comma-separated list
 ///|
 test "header_contains_token_case_insensitive returns false when token not found" {
   let headers : Map[String, String] = { "Connection": "keep-alive" }
-  inspect(
+  debug_inspect(
     header_contains_token_case_insensitive(headers, "Connection", "upgrade"),
     content="false",
   )
@@ -85,7 +130,7 @@ test "header_contains_token_case_insensitive returns false when token not found"
 ///|
 test "header_contains_token_case_insensitive is case insensitive on header name" {
   let headers : Map[String, String] = { "CONNECTION": "Upgrade" }
-  inspect(
+  debug_inspect(
     header_contains_token_case_insensitive(headers, "connection", "upgrade"),
     content="true",
   )
@@ -94,7 +139,7 @@ test "header_contains_token_case_insensitive is case insensitive on header name"
 ///|
 test "header_contains_token_case_insensitive returns false for missing header" {
   let headers : Map[String, String] = {}
-  inspect(
+  debug_inspect(
     header_contains_token_case_insensitive(headers, "Connection", "upgrade"),
     content="false",
   )
@@ -122,7 +167,7 @@ test "is_websocket_upgrade_request returns true with both headers" {
     path: "/",
     headers: { "Connection": "upgrade", "Upgrade": "websocket" },
   }
-  inspect(request.is_websocket_upgrade_request(), content="true")
+  debug_inspect(request.is_websocket_upgrade_request(), content="true")
 }
 
 ///|
@@ -132,7 +177,7 @@ test "is_websocket_upgrade_request returns false without Connection header" {
     path: "/",
     headers: { "Upgrade": "websocket" },
   }
-  inspect(request.is_websocket_upgrade_request(), content="false")
+  debug_inspect(request.is_websocket_upgrade_request(), content="false")
 }
 
 ///|
@@ -142,13 +187,13 @@ test "is_websocket_upgrade_request returns false without Upgrade header" {
     path: "/",
     headers: { "Connection": "upgrade" },
   }
-  inspect(request.is_websocket_upgrade_request(), content="false")
+  debug_inspect(request.is_websocket_upgrade_request(), content="false")
 }
 
 ///|
 test "is_websocket_upgrade_request returns false with empty headers" {
   let request : @http.Request = { meth: Get, path: "/", headers: {} }
-  inspect(request.is_websocket_upgrade_request(), content="false")
+  debug_inspect(request.is_websocket_upgrade_request(), content="false")
 }
 
 ///|
@@ -182,17 +227,32 @@ fn allow_header_value(methods : Array[String]) -> String {
 
 ///|
 test "allow_header_value joins methods with comma and space" {
-  inspect(allow_header_value(["GET", "POST", "PUT"]), content="GET, POST, PUT")
+  debug_inspect(
+    allow_header_value(["GET", "POST", "PUT"]),
+    content=(
+      #|"GET, POST, PUT"
+    ),
+  )
 }
 
 ///|
 test "allow_header_value with single method" {
-  inspect(allow_header_value(["GET"]), content="GET")
+  debug_inspect(
+    allow_header_value(["GET"]),
+    content=(
+      #|"GET"
+    ),
+  )
 }
 
 ///|
 test "allow_header_value with empty array" {
-  inspect(allow_header_value([]), content="")
+  debug_inspect(
+    allow_header_value([]),
+    content=(
+      #|""
+    ),
+  )
 }
 
 ///|
@@ -317,7 +377,7 @@ async fn App::handle_request(
         // Copy StringView params into owned Strings: the peer outlives the
         // request buffer, so borrowed views would dangle.
         let ws_params : Map[String, String] = {}
-        route_params.each((k, v) => ws_params.set(k, v.to_string()))
+        route_params.each((k, v) => ws_params.set(k, v.to_owned()))
         @ws.handle_route_async(
           ws_runtime_id, request, conn, ws_handler, ws_params, websocket_max_message_bytes,
           websocket_outgoing_queue_capacity, websocket_overflow_policy, websocket_read_timeout_ms,
@@ -449,7 +509,9 @@ async fn run_native_server(
 
 ///|
 async fn wait_for_shutdown_signal(shutdown : @async.Queue[Unit]) -> Unit {
-  ignore(try? shutdown.get())
+  shutdown.get() catch {
+    _ => ()
+  }
 }
 
 ///|
@@ -499,13 +561,11 @@ pub async fn App::serve_on(
           // 4. Inner group waits for handler tasks to finish current requests.
           // 5. Hard timeout (started AFTER shutdown) cancels everything.
           let sem : @async.Semaphore? = match options.max_connections {
-            Some(n) => Some(@async.Semaphore::new(n))
+            Some(n) => Some(Semaphore(n))
             None => None
           }
-          let draining : Ref[Bool] = Ref::new(false)
-          let handlers_drained : @async.Queue[Unit] = @async.Queue::new(
-            kind=Unbounded,
-          )
+          let draining : Ref[Bool] = Ref(false)
+          let handlers_drained : @async.Queue[Unit] = Queue(kind=Unbounded)
           @async.with_task_group(outer => {
             // Inner group: accept loop + handler tasks
             outer.spawn_bg(no_wait=true, allow_failure=true, () => {
@@ -513,50 +573,41 @@ pub async fn App::serve_on(
                 // Accept loop is the main function of inner group.
                 // When it exits, inner group waits for handler children.
                 for ;; {
-                  let conn_result : Result[
-                    (@http.ServerConnection, @socket.Addr),
-                    Error,
-                  ] = try? server.accept()
-                  match conn_result {
-                    Err(_) => break // server closed, stop accepting
-                    Ok((conn, _addr)) => {
-                      match sem {
-                        Some(s) => s.acquire()
-                        None => ()
-                      }
-                      inner.spawn_bg(allow_failure=true, () => {
-                        defer (match sem {
-                          Some(s) => s.release()
-                          None => ()
-                        })
-                        // Keep-alive loop: check draining after each request
-                        for ;; {
-                          let req_result : Result[@http.Request, Error] = try? conn.read_request()
-                          match req_result {
-                            Ok(request) => {
-                              let body_reader : &@io.Reader = conn
-                              self.handle_request(
-                                ws_runtime_id, request, body_reader, conn, options,
-                              ) catch {
-                                _ => {
-                                  conn.close()
-                                  break
-                                }
-                              }
-                              if draining.val {
-                                conn.close()
-                                break
-                              }
-                            }
-                            Err(_) => {
-                              conn.close()
-                              break
-                            }
-                          }
-                        }
-                      })
-                    }
+                  let (conn, _addr) = server.accept() catch {
+                    _ => break // server closed, stop accepting
                   }
+                  match sem {
+                    Some(s) => s.acquire()
+                    None => ()
+                  }
+                  inner.spawn_bg(allow_failure=true, () => {
+                    defer (match sem {
+                      Some(s) => s.release()
+                      None => ()
+                    })
+                    // Keep-alive loop: check draining after each request
+                    for ;; {
+                      let request = conn.read_request() catch {
+                        _ => {
+                          conn.close()
+                          break
+                        }
+                      }
+                      let body_reader : &@io.Reader = conn
+                      self.handle_request(
+                        ws_runtime_id, request, body_reader, conn, options,
+                      ) catch {
+                        _ => {
+                          conn.close()
+                          break
+                        }
+                      }
+                      if draining.val {
+                        conn.close()
+                        break
+                      }
+                    }
+                  })
                 }
               })
               // Inner group done: all handlers have finished
@@ -568,7 +619,7 @@ pub async fn App::serve_on(
             server.close()
             // Timeout starts NOW (after shutdown signal, not from boot)
             @async.any([
-              () => ignore(try? handlers_drained.get()),
+              () => handlers_drained.get() catch { _ => () },
               () => @async.sleep(timeout_ms),
             ])
             // Outer main returns → outer group cancels inner (no_wait=true)

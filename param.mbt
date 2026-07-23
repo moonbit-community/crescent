@@ -51,7 +51,7 @@ pub fn Event::param_int64(self : Event, name : String) -> Int64? {
 /// Returns a route parameter as a String, or raises `HttpError(BadRequest)` if missing.
 pub fn Event::require_param(self : Event, name : String) -> String raise {
   match self.params.get(name) {
-    Some(v) => v.to_string()
+    Some(v) => v.to_owned()
     None =>
       raise HttpError::HttpError(
         BadRequest,

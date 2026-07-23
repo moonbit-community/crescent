@@ -3,16 +3,7 @@
 struct TestUser {
   name : String
   age : Int
-} derive(FromJson, ToJson, Eq)
-
-///|
-impl Show for TestUser with output(self, logger) {
-  logger.write_string("TestUser { name: ")
-  logger.write_object(self.name)
-  logger.write_string(", age: ")
-  logger.write_object(self.age)
-  logger.write_string(" }")
-}
+} derive(FromJson, ToJson, Eq, Debug)
 
 ///|
 test "HttpRequest::json parses struct from body" {
@@ -29,8 +20,9 @@ test "HttpRequest::json parses struct from body" {
 ///|
 test "HttpRequest::json fails on invalid json" {
   let req = @crescent.HttpRequest(Post, "/users", {}, raw_body=b"not json")
-  let result : Result[TestUser, _] = try? req.json()
-  assert_true(result is Err(_))
+  @test.assert_raise(() => {
+    let _ : TestUser = req.json()
+  })
 }
 
 ///|
@@ -41,8 +33,9 @@ test "HttpRequest::json fails on missing fields" {
     {},
     raw_body=b"{\"name\":\"Alice\"}",
   )
-  let result : Result[TestUser, _] = try? req.json()
-  assert_true(result is Err(_))
+  @test.assert_raise(() => {
+    let _ : TestUser = req.json()
+  })
 }
 
 ///|
@@ -53,8 +46,9 @@ test "HttpRequest::json fails on wrong field type" {
     {},
     raw_body=b"{\"name\":\"Alice\",\"age\":\"thirty\"}",
   )
-  let result : Result[TestUser, _] = try? req.json()
-  assert_true(result is Err(_))
+  @test.assert_raise(() => {
+    let _ : TestUser = req.json()
+  })
 }
 
 ///|
@@ -73,20 +67,26 @@ test "HttpRequest::json parses nested struct" {
 ///|
 test "HttpRequest::json parses empty body as error" {
   let req = @crescent.HttpRequest(Post, "/", {}, raw_body=b"")
-  let result : Result[TestUser, _] = try? req.json()
-  assert_true(result is Err(_))
+  @test.assert_raise(() => {
+    let _ : TestUser = req.json()
+  })
 }
 
 ///|
 test "HttpResponse::json_value sets content type and body" {
   let user : TestUser = { name: "Alice", age: 30 }
   let res = @crescent.HttpResponse::ok().json_value(user)
-  inspect(res.status_code, content="OK")
-  inspect(
+  debug_inspect(res.status_code, content="OK")
+  debug_inspect(
     res.headers.get("Content-Type"),
     content="Some(\"application/json; charset=utf-8\")",
   )
-  inspect(@utf8.decode(res.raw_body), content="{\"name\":\"Alice\",\"age\":30}")
+  debug_inspect(
+    @utf8.decode(res.raw_body),
+    content=(
+      #|"{\"name\":\"Alice\",\"age\":30}"
+    ),
+  )
 }
 
 ///|
@@ -96,8 +96,10 @@ test "HttpResponse::json_value with array" {
     { name: "Bob", age: 25 },
   ]
   let res = @crescent.HttpResponse::ok().json_value(users)
-  inspect(
+  debug_inspect(
     @utf8.decode(res.raw_body),
-    content="[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]",
+    content=(
+      #|"[{\"name\":\"Alice\",\"age\":30},{\"name\":\"Bob\",\"age\":25}]"
+    ),
   )
 }

@@ -11,9 +11,11 @@ test "CookieItem::to_string" {
     same_site: Some(SameSiteNone),
   }
   let s = Show::to_string(item)
-  inspect(
+  debug_inspect(
     s,
-    content="session_id=12345; Max-Age=3600; Path=/; Domain=example.com; Secure; HttpOnly; SameSite=SameSiteNone",
+    content=(
+      #|"session_id=12345; Max-Age=3600; Path=/; Domain=example.com; Secure; HttpOnly; SameSite=SameSiteNone"
+    ),
   )
 }
 
@@ -128,9 +130,11 @@ test "cookie_to_string joins cookies and invalid max-age falls back to none" {
       same_site: None,
     },
   ]
-  inspect(
+  debug_inspect(
     cookie_to_string(cookies),
-    content="session=abc123; Path=/; Secure; HttpOnly; SameSite=Lax;theme=dark",
+    content=(
+      #|"session=abc123; Path=/; Secure; HttpOnly; SameSite=Lax;theme=dark"
+    ),
   )
 
   let parsed = parse_cookie("session=abc123; Max-Age=oops")
