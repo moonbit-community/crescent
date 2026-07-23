@@ -152,6 +152,14 @@ pub impl ServeStaticProvider for StaticFileProvider with fn get_contents(
             let headers : Map[String, String] = {}
             headers.set("Content-Length", size.to_string())
             headers.set("ETag", static_asset_etag(mtime_sec, mtime_nsec, size))
+            let parts = id.split(".").collect()
+            if parts.length() > 1 {
+              match
+                mime_type_for_extension(parts[parts.length() - 1].to_owned()) {
+                Some(content_type) => headers.set("Content-Type", content_type)
+                None => ()
+              }
+            }
             headers
           } catch {
             _ => {}

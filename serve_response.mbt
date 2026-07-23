@@ -34,6 +34,51 @@ fn append_cookie_headers(
 }
 
 ///|
+/// `@http.Cookie` writes names and values verbatim, whereas Crescent's
+/// `CookieItem` serialization removes delimiters that could inject another
+/// cookie attribute or header. Preserve that invariant when adapting cookies
+/// to the async HTTP transport.
+fn sanitize_async_cookie_value(value : String) -> String {
+  if value.contains("\r") || value.contains("\n") || value.contains(";") {
+    let sanitized = StringBuilder()
+    for char in value {
+      if char != '\r' && char != '\n' && char != ';' {
+        sanitized.write_char(char)
+      }
+    }
+    sanitized.to_string()
+  } else {
+    value
+  }
+}
+
+///|
+/// Adapts Crescent's public cookie model to the async server's cookie channel,
+/// which emits one `Set-Cookie` field per value instead of folding repeated
+/// fields into a header map.
+fn to_async_http_cookie(cookie : @cookie.CookieItem) -> @http.Cookie {
+  let path = cookie.path
+  let max_age = cookie.max_age.map(age => age.to_int64())
+  let domain = cookie.domain
+  let extensions = match cookie.same_site {
+    Some(Lax) => ["SameSite=Lax"]
+    Some(Strict) => ["SameSite=Strict"]
+    Some(SameSiteNone) => ["SameSite=SameSiteNone"]
+    None => []
+  }
+  Cookie(
+    sanitize_async_cookie_value(cookie.name),
+    sanitize_async_cookie_value(cookie.value),
+    path?,
+    max_age?,
+    domain?,
+    secure=cookie.secure.unwrap_or(false),
+    http_only=cookie.http_only.unwrap_or(false),
+    extensions~,
+  )
+}
+
+///|
 test "append_cookie_headers with empty cookies does nothing" {
   let headers : Map[String, String] = {}
   let cookies : Map[String, @cookie.CookieItem] = {}
@@ -104,6 +149,7 @@ async fn send_raw_response_async(
   headers : Map[String, String],
   include_body : Bool,
 ) -> Unit {
+  append_cookie_headers(headers, response.cookies)
   if !@httputil.has_header_case_insensitive(headers, "Date") {
     headers.set("Date", current_http_date())
   }
@@ -137,11 +183,11 @@ async fn send_raw_response_async(
 }
 
 ///|
-/// Applies a responder to a response and serializes pending cookies into
-/// `Set-Cookie` headers. Shared by the live serving path
-/// (`send_response_async`) and synthetic dispatch (`App::dispatch`) so the
-/// two stay aligned: any bug in body materialization or cookie serialization
-/// would otherwise have to be fixed twice (see commits bb22108, eb6f24b).
+/// Applies a responder and materializes its body. Shared by the live serving
+/// path (`send_response_async`) and synthetic dispatch (`App::dispatch`) so
+/// responder options and bytes stay aligned (see commits bb22108, eb6f24b).
+/// Cookie serialization stays at the transport boundary: live responses use
+/// async's typed cookie API, while raw and synthetic responses need headers.
 fn finalize_response_body(
   response : HttpResponse,
   responder : &Responder,
@@ -156,7 +202,6 @@ fn finalize_response_body(
       response.raw_body = buffer.to_bytes()
     }
   }
-  append_cookie_headers(response.headers, response.cookies)
 }
 
 ///|
@@ -183,6 +228,7 @@ async fn send_response_async(
     response.status_code.to_int(),
     response.status_code.to_string(),
     extra_headers=headers,
+    cookies=response.cookies.values().map(to_async_http_cookie).to_array(),
   )
   if !response.raw_body.is_empty() {
     conn.write(response.raw_body)
@@ -197,7 +243,6 @@ async fn send_response_and_close_async(
   response : HttpResponse,
 ) -> Unit {
   let headers = response.headers
-  append_cookie_headers(headers, response.cookies)
   if !@httputil.has_header_case_insensitive(headers, "Date") {
     headers.set("Date", current_http_date())
   }
@@ -213,6 +258,7 @@ async fn send_response_and_close_async(
     response.status_code.to_int(),
     response.status_code.to_string(),
     extra_headers=headers,
+    cookies=response.cookies.values().map(to_async_http_cookie).to_array(),
   )
   if !response.raw_body.is_empty() {
     conn.write(response.raw_body)

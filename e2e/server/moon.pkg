@@ -1,0 +1,11 @@
+import {
+  "bobzhang/crescent",
+  "bobzhang/crescent/cors",
+  "bobzhang/crescent/fetch",
+  "bobzhang/crescent/static_file",
+  "moonbitlang/async",
+}
+
+supported_targets = "-all+native+wasm"
+
+pkgtype(kind: "executable")
