@@ -144,3 +144,15 @@ test "cookie_to_string joins cookies and invalid max-age falls back to none" {
   assert_eq(cookie.value, "abc123")
   assert_eq(cookie.max_age, None)
 }
+
+///|
+test "parse_cookie stops at a token it cannot scan" {
+  // A leading separator matches no scanner case, so parsing stops immediately
+  // instead of spinning on a zero-width match.
+  let cookies = parse_cookie("; name=value")
+  inspect(cookies.length(), content="0")
+  // A stray separator mid-string ends the scan after the pairs before it.
+  let partial = parse_cookie("a=1;;b=2")
+  inspect(partial.length(), content="1")
+  debug_inspect(partial.get("a").map(i => i.value), content="Some(\"1\")")
+}

@@ -36,6 +36,11 @@ pub(all) enum NativeWebSocketOverflowPolicy {
   DropOldest
   DropLatest
 } derive(Eq, @debug.Debug)
+pub fn NativeWebSocketOverflowPolicy::equal(Self, Self) -> Bool
+pub fn NativeWebSocketOverflowPolicy::not_equal(Self, Self) -> Bool
+pub fn NativeWebSocketOverflowPolicy::output(Self, &Logger) -> Unit
+pub fn NativeWebSocketOverflowPolicy::to_repr(Self) -> @debug.Repr
+pub fn NativeWebSocketOverflowPolicy::to_string(Self) -> String
 pub impl Show for NativeWebSocketOverflowPolicy
 
 pub(all) enum WebSocketAggregatedMessage {
@@ -67,4 +72,3 @@ pub fn WebSocketPeer::unsubscribe(Self, String) -> Unit
 // Type aliases
 
 // Traits
-

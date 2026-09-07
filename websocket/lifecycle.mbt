@@ -273,6 +273,10 @@ pub async fn handle_route_async(
   // -------------------------------------------------------------------------
   // Phase 3 + 4: Writer task + peer loop
   // -------------------------------------------------------------------------
+  // Close fires exactly once per Open, on every exit path (normal return,
+  // handler failure, or async cancellation), and always before the hub
+  // unregistration and socket close registered above.
+  defer handler(Close(snapshot_native_ws_peer(connection_id, params)))
   // Task group scope: the writer task is a child, the peer loop is the
   // group's main body. When the main body exits, the group waits for the
   // writer (which outgoing.close() nudges to completion). If either task
@@ -303,19 +307,14 @@ pub async fn handle_route_async(
     // anything already enqueued, then exits, letting the group close.
     outgoing.close()
   }) catch {
-    err => {
-      // Cancellation path (server shutdown): send a 1001 GoingAway close
-      // frame so clients see an orderly shutdown instead of a TCP reset.
-      // The close helper itself is cancel-protected.
-      if @async.is_cancellation_error(err) {
-        send_native_ws_shutdown_close(ws)
-      }
-      // Close still fires on the error path — paired with the Open above.
-      handler(Close(snapshot_native_ws_peer(connection_id, params)))
+    // Cancellation path (server shutdown): send a 1001 GoingAway close
+    // frame so clients see an orderly shutdown instead of a TCP reset.
+    // The close helper itself is cancel-protected. Every other error
+    // propagates untouched.
+    err if @async.is_cancellation_error(err) => {
+      send_native_ws_shutdown_close(ws)
       raise err
     }
+    err => raise err
   }
-  // Normal-exit Close. Paired with the catch-path Close above, this ensures
-  // Close fires exactly once per Open regardless of how the session ended.
-  handler(Close(snapshot_native_ws_peer(connection_id, params)))
 }

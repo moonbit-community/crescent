@@ -133,7 +133,7 @@ fn is_unreserved(b : Byte) -> Bool {
 /// Percent-encodes a string for use in URLs, escaping all characters except unreserved ones.
 pub fn url_encode(s : String) -> String {
   let bytes = @utf8.encode(s)
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for i in 0..<bytes.length() {
     let b = bytes[i]
     if is_unreserved(b) {
@@ -162,7 +162,7 @@ pub fn url_encode(s : String) -> String {
 ///|
 /// Encodes a map of key-value pairs into a URL-encoded form string (e.g. `key=value&foo=bar`).
 pub fn form_encode(map : Map[String, String]) -> String {
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut first = true
   map.each((k, v) => {
     if !first {

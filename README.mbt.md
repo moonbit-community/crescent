@@ -67,7 +67,7 @@ struct JsonDemoUser {
 
 ///|
 test "json_value sets content-type and serializes body" {
-  let user = JsonDemoUser::{ name: "Alice", age: 30 }
+  let user = JsonDemoUser::{ name: "Alice", age: 30, }
   let res = HttpResponse::ok().json_value(user)
   debug_inspect(
     res,
@@ -101,7 +101,7 @@ You never write error-handling boilerplate.
 #warnings("-unused_value")
 fn build_app() -> @crescent.App {
   let app = @crescent.App()
-  let todos : Array[Todo] = [{ id: 1, title: "Learn MoonBit", done: false }]
+  let todos : Array[Todo] = [{ id: 1, title: "Learn MoonBit", done: false, }]
   let next_id = Ref::Ref(2)
 
   // List all
@@ -121,7 +121,7 @@ fn build_app() -> @crescent.App {
   // Create — event.json() auto-returns 400 for invalid JSON
   app.post("/api/todos", event => {
     let input : CreateTodo = event.json()
-    let todo = Todo::{ id: next_id.val, title: input.title, done: false }
+    let todo = Todo::{ id: next_id.val, title: input.title, done: false, }
     next_id.val += 1
     todos.push(todo)
     HttpResponse::created().json_value(todo)
@@ -345,7 +345,7 @@ struct CreateResItem {
 
 ///|
 async test "resource CRUD" {
-  let items : Array[ResItem] = [{ id: 1, name: "Alpha" }]
+  let items : Array[ResItem] = [{ id: 1, name: "Alpha", }]
   let app = @crescent.App()
   app.resource(
     "/items",
@@ -362,7 +362,7 @@ async test "resource CRUD" {
       },
       create=event => {
         let input : CreateResItem = event.json()
-        let item = ResItem::{ id: 2, name: input.name }
+        let item = ResItem::{ id: 2, name: input.name, }
         items.push(item)
         HttpResponse::created().json_value(item)
       },

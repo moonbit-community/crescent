@@ -15,9 +15,14 @@ pub struct StaticFileProvider {
   // private fields
 }
 pub fn StaticFileProvider::StaticFileProvider(path~ : String) -> Self
+pub async fn StaticFileProvider::get_contents(Self, String) -> &@core.Responder noraise
+pub fn StaticFileProvider::get_encodings(Self) -> Map[String, String]
+pub fn StaticFileProvider::get_fallthrough(Self) -> Bool
+pub fn StaticFileProvider::get_index_names(Self) -> Array[String]
+pub async fn StaticFileProvider::get_meta(Self, String) -> @crescent.StaticAssetMeta? noraise
+pub fn StaticFileProvider::get_type(Self, String) -> String?
 pub impl @crescent.ServeStaticProvider for StaticFileProvider
 
 // Type aliases
 
 // Traits
-

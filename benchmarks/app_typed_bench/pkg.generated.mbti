@@ -15,4 +15,3 @@ type BenchUser derive(ToJson, @json.FromJson)
 // Type aliases
 
 // Traits
-

@@ -22,7 +22,7 @@ pub fn ResourceConfig::ResourceConfig(
   update? : async (Event) -> &Responder,
   delete? : async (Event) -> &Responder,
 ) -> ResourceConfig {
-  { list, get, create, update, delete }
+  { list, get, create, update, delete, }
 }
 
 ///|

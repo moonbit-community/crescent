@@ -192,7 +192,7 @@ test "is_websocket_upgrade_request returns false without Upgrade header" {
 
 ///|
 test "is_websocket_upgrade_request returns false with empty headers" {
-  let request : @http.Request = { meth: Get, path: "/", headers: {} }
+  let request : @http.Request = { meth: Get, path: "/", headers: {}, }
   debug_inspect(request.is_websocket_upgrade_request(), content="false")
 }
 

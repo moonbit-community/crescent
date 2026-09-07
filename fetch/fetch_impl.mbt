@@ -100,7 +100,7 @@ fn resolve_fetch_url(
   }
 
   // Reconstruct the request path from segments and query.
-  let path_buf = StringBuilder::new()
+  let path_buf = StringBuilder()
   for seg in parsed.path {
     path_buf.write_string("/")
     path_buf.write_view(seg)

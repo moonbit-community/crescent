@@ -11,6 +11,12 @@ pub(all) enum FetchCredentials {
 } derive(Eq, Debug)
 
 ///|
+pub extend FetchCredentials with Eq::{not_equal, equal}
+
+///|
+pub extend FetchCredentials with Debug::{to_repr}
+
+///|
 /// Returns the string representation of a `FetchCredentials` value for use in fetch request options.
 pub fn FetchCredentials::to_string(self : FetchCredentials) -> String {
   match self {
@@ -34,6 +40,12 @@ pub(all) enum FetchMode {
 } derive(Eq, Debug)
 
 ///|
+pub extend FetchMode with Eq::{not_equal, equal}
+
+///|
+pub extend FetchMode with Debug::{to_repr}
+
+///|
 /// Returns the string representation of a `FetchMode` value for use in fetch request options.
 pub fn FetchMode::to_string(self : FetchMode) -> String {
   match self {
@@ -49,3 +61,6 @@ pub fn FetchMode::to_string(self : FetchMode) -> String {
 pub suberror FetchError {
   RequestFailed(String)
 } derive(Debug)
+
+///|
+pub extend FetchError with Debug::{to_repr}

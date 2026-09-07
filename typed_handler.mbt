@@ -5,6 +5,9 @@ pub(all) suberror HttpError {
 } derive(Debug)
 
 ///|
+pub extend HttpError with Debug::{to_repr}
+
+///|
 fn wrap_error_handler(handler : async (Event) -> &Responder) -> HttpHandler {
   event => {
     handler(event) catch {

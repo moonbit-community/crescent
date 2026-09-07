@@ -21,4 +21,3 @@ pub fn is_preflight_request(@crescent.Event) -> Bool
 // Type aliases
 
 // Traits
-

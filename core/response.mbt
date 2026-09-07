@@ -13,6 +13,9 @@ pub(all) struct HttpResponse {
 } derive(Debug(ignore=Bytes))
 
 ///|
+pub extend HttpResponse with Debug::{to_repr}
+
+///|
 /// Deserializes the response body into a value of type `T` via the `BodyReader` trait.
 pub fn[T : BodyReader] HttpResponse::read_body(self : HttpResponse) -> T raise {
   T::from_request(

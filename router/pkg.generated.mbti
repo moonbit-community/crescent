@@ -17,6 +17,7 @@ pub struct CompiledRoute {
 } derive(@debug.Debug)
 pub fn CompiledRoute::CompiledRoute(String) -> Self
 pub fn CompiledRoute::match_path(Self, String) -> Map[String, StringView]?
+pub fn CompiledRoute::to_repr(Self) -> @debug.Repr
 
 pub struct RadixRouter[T] {
   // private fields
@@ -33,8 +34,10 @@ pub enum RouteSegment {
   Wildcard
   GlobStar
 } derive(Eq, @debug.Debug)
+pub fn RouteSegment::equal(Self, Self) -> Bool
+pub fn RouteSegment::not_equal(Self, Self) -> Bool
+pub fn RouteSegment::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

@@ -16,7 +16,9 @@ async fn main {
   ..get("/", _ => "Tadaa!")
 
   // Object Response using json_value
-  ..get("/json", _ => HttpResponse::ok().json_value({ name: "oboard", age: 21 }))
+  ..get("/json", _ => {
+    HttpResponse::ok().json_value({ name: "oboard", age: 21, })
+  })
 
   // JSON Request using event.req.json[T]() with post for auto error handling
   // curl --location 'localhost:4000/json' \

@@ -17,6 +17,9 @@ pub fn text(&Show) -> &Responder
 
 // Types and methods
 type Html
+pub fn Html::options(Self, HttpResponse) -> Unit
+pub fn Html::output(Self, @buffer.Buffer) -> Unit
+pub fn Html::output_bytes(Self) -> Bytes?
 pub impl Responder for Html
 
 pub(all) enum HttpMethod {
@@ -31,8 +34,13 @@ pub(all) enum HttpMethod {
   Connect
   Other(String)
 } derive(Eq, @debug.Debug)
+pub fn HttpMethod::equal(Self, Self) -> Bool
 pub fn HttpMethod::from_string(String) -> Self
+pub fn HttpMethod::not_equal(Self, Self) -> Bool
+pub fn HttpMethod::output(Self, &Logger) -> Unit
 pub fn HttpMethod::to_method_string(Self) -> String
+pub fn HttpMethod::to_repr(Self) -> @debug.Repr
+pub fn HttpMethod::to_string(Self) -> String
 pub impl Show for HttpMethod
 
 pub(all) struct HttpRequest {
@@ -51,9 +59,13 @@ pub fn HttpRequest::get_header(Self, String) -> String?
 pub fn HttpRequest::get_query(Self, String) -> String?
 pub fn[T : @json.FromJson] HttpRequest::json(Self) -> T raise
 pub fn HttpRequest::method_string(Self) -> String
+pub fn HttpRequest::options(Self, HttpResponse) -> Unit
+pub fn HttpRequest::output(Self, @buffer.Buffer) -> Unit
+pub fn HttpRequest::output_bytes(Self) -> Bytes?
 pub fn HttpRequest::path(Self) -> String
 pub fn HttpRequest::query_params(Self) -> Map[String, String]
 pub fn HttpRequest::query_string(Self) -> String?
+pub fn HttpRequest::to_repr(Self) -> @debug.Repr
 pub fn[T : @json.FromJson] HttpRequest::try_json(Self) -> Result[T, String]
 pub impl Responder for HttpRequest
 
@@ -77,12 +89,16 @@ pub fn[T : ToJson] HttpResponse::json_value(Self, T) -> Self
 pub fn HttpResponse::no_content() -> Self
 pub fn HttpResponse::not_found() -> Self
 pub fn HttpResponse::ok() -> Self
+pub fn HttpResponse::options(Self, Self) -> Unit
+pub fn HttpResponse::output(Self, @buffer.Buffer) -> Unit
+pub fn HttpResponse::output_bytes(Self) -> Bytes?
 pub fn[T : BodyReader] HttpResponse::read_body(Self) -> T raise
 pub fn HttpResponse::redirect(String) -> Self
 pub fn HttpResponse::redirect_307(String) -> Self
 pub fn HttpResponse::redirect_308(String) -> Self
 pub fn HttpResponse::redirect_temporary(String) -> Self
 pub fn HttpResponse::set_cookie(Self, String, String, max_age? : Int, path? : String, domain? : String, secure? : Bool, http_only? : Bool, same_site? : @cookie.SameSiteOption) -> Unit
+pub fn HttpResponse::to_repr(Self) -> @debug.Repr
 pub fn HttpResponse::to_responder(Self) -> &Responder
 pub fn HttpResponse::unauthorized() -> Self
 pub impl Responder for HttpResponse
@@ -152,11 +168,15 @@ pub(all) enum StatusCode {
   NetworkAuthenticationRequired
   Custom(Int)
 } derive(Eq, ToJson, @debug.Debug)
+pub fn StatusCode::equal(Self, Self) -> Bool
 pub fn StatusCode::from_int(Int) -> Self
+pub fn StatusCode::not_equal(Self, Self) -> Bool
+pub fn StatusCode::output(Self, &Logger) -> Unit
 pub fn StatusCode::to_int(Self) -> Int
+pub fn StatusCode::to_json(Self) -> Json
+pub fn StatusCode::to_repr(Self) -> @debug.Repr
+pub fn StatusCode::to_string(Self) -> String
 pub impl Show for StatusCode
-
-type TryJsonTestUser derive(Eq, ToJson, @debug.Debug, @json.FromJson)
 
 // Type aliases
 
@@ -180,4 +200,3 @@ pub impl Responder for Bytes
 pub impl Responder for Json
 pub impl Responder for &ToJson
 pub impl Responder for StringView
-

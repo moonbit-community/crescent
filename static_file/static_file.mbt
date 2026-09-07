@@ -13,6 +13,16 @@ pub struct StaticFileProvider {
 }
 
 ///|
+pub extend StaticFileProvider with ServeStaticProvider::{
+  get_fallthrough,
+  get_contents,
+  get_type,
+  get_encodings,
+  get_meta,
+  get_index_names,
+}
+
+///|
 /// Creates a new `StaticFileProvider` rooted at the given directory path.
 pub fn StaticFileProvider::StaticFileProvider(
   path~ : String,

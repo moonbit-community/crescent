@@ -16,6 +16,9 @@ pub(all) struct HttpRequest {
 } derive(Debug(ignore=Bytes))
 
 ///|
+pub extend HttpRequest with Debug::{to_repr}
+
+///|
 /// Creates a new `HttpRequest` with the given method, URL, headers, and optional body.
 pub fn HttpRequest::HttpRequest(
   http_method : HttpMethod,
@@ -269,42 +272,4 @@ test "read_body" {
     ),
   )
   json_inspect(json, content={ "Hello": "World!" })
-}
-
-///|
-#warnings("-unnecessary_annotation")
-struct TryJsonTestUser {
-  name : String
-  age : Int
-} derive(FromJson, ToJson, Eq, Debug)
-
-///|
-test "try_json returns Ok on valid json" {
-  let req = HttpRequest(
-    Post,
-    "/",
-    {},
-    raw_body=@utf8.encode("{\"name\":\"Alice\",\"age\":30}"),
-  )
-  let result : Result[TryJsonTestUser, String] = req.try_json()
-  assert_eq(result, Ok({ name: "Alice", age: 30 }))
-}
-
-///|
-test "try_json returns Err on invalid json" {
-  let req = HttpRequest(Post, "/", {}, raw_body=b"not valid json")
-  let result : Result[TryJsonTestUser, String] = req.try_json()
-  assert_true(result is Err(_))
-}
-
-///|
-test "try_json returns Err on wrong schema" {
-  let req = HttpRequest(
-    Post,
-    "/",
-    {},
-    raw_body=@utf8.encode("{\"wrong_field\":123}"),
-  )
-  let result : Result[TryJsonTestUser, String] = req.try_json()
-  assert_true(result is Err(_))
 }

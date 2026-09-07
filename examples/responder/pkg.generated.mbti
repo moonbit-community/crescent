@@ -15,4 +15,3 @@ type Person derive(ToJson, @json.FromJson)
 // Type aliases
 
 // Traits
-

@@ -17,4 +17,3 @@ type UserInput derive(ToJson, @json.FromJson)
 // Type aliases
 
 // Traits
-

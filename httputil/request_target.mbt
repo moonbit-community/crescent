@@ -52,7 +52,7 @@ pub fn normalize_path(path : String) -> String {
   if !path.contains("//") {
     return path
   }
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   let mut prev_slash = false
   for c in path {
     if c == '/' {

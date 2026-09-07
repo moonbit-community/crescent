@@ -33,6 +33,7 @@ pub async fn trace(String, data? : &@core.Responder, headers? : Map[String, Stri
 pub suberror FetchError {
   RequestFailed(String)
 } derive(@debug.Debug)
+pub fn FetchError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub(all) enum FetchCredentials {
@@ -40,6 +41,9 @@ pub(all) enum FetchCredentials {
   SameOrigin
   Include
 } derive(Eq, @debug.Debug)
+pub fn FetchCredentials::equal(Self, Self) -> Bool
+pub fn FetchCredentials::not_equal(Self, Self) -> Bool
+pub fn FetchCredentials::to_repr(Self) -> @debug.Repr
 pub fn FetchCredentials::to_string(Self) -> String
 
 pub(all) enum FetchMode {
@@ -48,9 +52,11 @@ pub(all) enum FetchMode {
   SameOrigin
   Navigate
 } derive(Eq, @debug.Debug)
+pub fn FetchMode::equal(Self, Self) -> Bool
+pub fn FetchMode::not_equal(Self, Self) -> Bool
+pub fn FetchMode::to_repr(Self) -> @debug.Repr
 pub fn FetchMode::to_string(Self) -> String
 
 // Type aliases
 
 // Traits
-

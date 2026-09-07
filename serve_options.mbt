@@ -12,6 +12,12 @@ pub suberror NativeServeError {
 } derive(Debug, ToJson)
 
 ///|
+pub extend NativeServeError with Debug::{to_repr}
+
+///|
+pub extend NativeServeError with ToJson::{to_json}
+
+///|
 /// Configuration options for the native async HTTP server runtime.
 /// The constructor validates all values eagerly and raises on invalid input.
 pub struct NativeServeOptions {

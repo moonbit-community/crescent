@@ -204,7 +204,7 @@ fn parse_multipart_part(
     }
   }
   if name != "" {
-    let value = { filename, content_type, data: body_bytes }
+    let value = { filename, content_type, data: body_bytes, }
     match res.get(name) {
       Some(existing) => existing.push(value)
       None => res.set(name, [value])

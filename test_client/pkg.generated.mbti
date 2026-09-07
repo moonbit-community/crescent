@@ -32,8 +32,8 @@ pub struct TestResponse {
 } derive(@debug.Debug)
 pub fn[T : @json.FromJson] TestResponse::body_json(Self) -> T raise
 pub fn TestResponse::body_text(Self) -> String
+pub fn TestResponse::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

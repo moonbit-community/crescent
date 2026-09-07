@@ -17,6 +17,9 @@ pub struct TestResponse {
 } derive(Debug(ignore=Bytes))
 
 ///|
+pub extend TestResponse with Debug::{to_repr}
+
+///|
 /// Creates a new test client wrapping the given app.
 pub fn TestClient::TestClient(app : @crescent.App) -> TestClient {
   { app, }
@@ -110,5 +113,5 @@ pub async fn TestClient::request(
   let (status, resp_headers, body_bytes) = self.app.dispatch(
     meth, path, headers, body,
   )
-  { status, headers: resp_headers, body_bytes }
+  { status, headers: resp_headers, body_bytes, }
 }

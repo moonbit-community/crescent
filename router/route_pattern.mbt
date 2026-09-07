@@ -12,6 +12,12 @@ pub enum RouteSegment {
 } derive(Eq, Debug)
 
 ///|
+pub extend RouteSegment with Eq::{not_equal, equal}
+
+///|
+pub extend RouteSegment with Debug::{to_repr}
+
+///|
 /// A pre-compiled route pattern, parsed once at registration time.
 pub struct CompiledRoute {
   /// The original template string (for debugging/display)
@@ -21,6 +27,9 @@ pub struct CompiledRoute {
   /// True if the route is static (no parameters or wildcards)
   is_static : Bool
 } derive(Debug)
+
+///|
+pub extend CompiledRoute with Debug::{to_repr}
 
 ///|
 /// Compiles a route template string into a `CompiledRoute`.
@@ -42,7 +51,7 @@ pub fn CompiledRoute::CompiledRoute(template : String) -> CompiledRoute {
       segments.push(Static(part.to_owned()))
     }
   }
-  { template, segments, is_static }
+  { template, segments, is_static, }
 }
 
 ///|

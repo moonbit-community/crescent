@@ -24,6 +24,11 @@ pub(all) struct CookieItem {
   same_site : SameSiteOption?
 } derive(Eq, @debug.Debug)
 pub fn CookieItem::CookieItem(name~ : String, value~ : String, max_age? : Int, path? : String, domain? : String, secure? : Bool, http_only? : Bool, same_site? : SameSiteOption) -> Self
+pub fn CookieItem::equal(Self, Self) -> Bool
+pub fn CookieItem::not_equal(Self, Self) -> Bool
+pub fn CookieItem::output(Self, &Logger) -> Unit
+pub fn CookieItem::to_repr(Self) -> @debug.Repr
+pub fn CookieItem::to_string(Self) -> String
 pub impl Show for CookieItem
 
 pub(all) enum SameSiteOption {
@@ -31,10 +36,15 @@ pub(all) enum SameSiteOption {
   Strict
   SameSiteNone
 } derive(Eq, @debug.Debug)
+pub fn SameSiteOption::equal(Self, Self) -> Bool
+pub fn SameSiteOption::not_equal(Self, Self) -> Bool
+pub fn SameSiteOption::output(Self, &Logger) -> Unit
+pub fn SameSiteOption::to_json(Self) -> Json
+pub fn SameSiteOption::to_repr(Self) -> @debug.Repr
+pub fn SameSiteOption::to_string(Self) -> String
 pub impl Show for SameSiteOption
 pub impl ToJson for SameSiteOption
 
 // Type aliases
 
 // Traits
-

@@ -98,6 +98,13 @@ struct StaticResolvedResponder {
 }
 
 ///|
+pub extend StaticResolvedResponder with Responder::{
+  options,
+  output,
+  output_bytes,
+}
+
+///|
 pub impl Responder for StaticResolvedResponder with fn options(self, res) -> Unit {
   self.inner.options(res)
   if res.status_code == OK {
@@ -273,7 +280,7 @@ pub fn App::static_assets(
             return HttpResponse(status_code=OK, headers=head_headers)
           }
           let contents = provider.get_contents(id)
-          StaticResolvedResponder::{ inner: contents, asset_headers }
+          StaticResolvedResponder::{ inner: contents, asset_headers, }
         }
       }
     },

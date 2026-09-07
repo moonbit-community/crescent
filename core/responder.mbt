@@ -79,7 +79,7 @@ pub impl Responder for Json with fn options(_, res) -> Unit {
 
 ///|
 pub impl Responder for Json with fn output(self, buf) -> Unit {
-  buf.write_string_utf8(self.to_json().stringify())
+  buf.write_string_utf8(self.stringify())
 }
 
 ///|
@@ -181,3 +181,12 @@ pub fn html(html : &Show) -> &Responder {
 pub fn text(text : &Show) -> &Responder {
   text.to_string()
 }
+
+///|
+pub extend HttpRequest with Responder::{options, output, output_bytes}
+
+///|
+pub extend HttpResponse with Responder::{options, output, output_bytes}
+
+///|
+pub extend Html with Responder::{options, output, output_bytes}

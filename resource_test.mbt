@@ -14,8 +14,8 @@ struct CreateItem {
 ///|
 async test "resource registers all CRUD routes" {
   let items : Array[ResourceItem] = [
-    { id: 1, name: "Alpha" },
-    { id: 2, name: "Beta" },
+    { id: 1, name: "Alpha", },
+    { id: 2, name: "Beta", },
   ]
   let app = @crescent.App()
   app.resource(
@@ -33,14 +33,14 @@ async test "resource registers all CRUD routes" {
       },
       create=event => {
         let input : CreateItem = event.json()
-        let item = ResourceItem::{ id: 3, name: input.name }
+        let item = ResourceItem::{ id: 3, name: input.name, }
         items.push(item)
         @crescent.HttpResponse::created().json_value(item)
       },
       update=event => {
         let id = event.require_param_int("id")
         let input : CreateItem = event.json()
-        let item = ResourceItem::{ id, name: input.name }
+        let item = ResourceItem::{ id, name: input.name, }
         @crescent.HttpResponse::ok().json_value(item)
       },
       delete=event => {
@@ -70,7 +70,7 @@ async test "resource registers all CRUD routes" {
   assert_eq(res3.status, NotFound)
   // POST /api/items — create
   let body = @utf8.encode(
-    ({ name: "Gamma" } : CreateItem).to_json().stringify(),
+    ToJson::to_json(({ name: "Gamma", } : CreateItem)).stringify(),
   )
   let res4 = client.post("/api/items", body~)
   assert_eq(res4.status, Created)
@@ -78,7 +78,7 @@ async test "resource registers all CRUD routes" {
   assert_eq(created.name, "Gamma")
   // PUT /api/items/1 — update
   let body2 = @utf8.encode(
-    ({ name: "Updated" } : CreateItem).to_json().stringify(),
+    ToJson::to_json(({ name: "Updated", } : CreateItem)).stringify(),
   )
   let res5 = client.put("/api/items/1", body=body2)
   assert_eq(res5.status, OK)

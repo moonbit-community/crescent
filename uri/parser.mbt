@@ -228,7 +228,7 @@ fn parse_authority(
   source : StringView,
   uri : Uri,
 ) -> StringView raise ParseError {
-  let authority = Authority::{ userinfo: None, host: RegName(""), port: None }
+  let authority = Authority::{ userinfo: None, host: RegName(""), port: None, }
   uri.authority = Some(authority)
 
   // Try to parse userinfo first
@@ -431,7 +431,7 @@ fn parse_query_no_fragment_then_done(
 
 ///|
 fn remove_dot_segments(path : Array[StringView]) -> Array[StringView] {
-  let output = Array::new()
+  let output = Array()
   for segment in path {
     if segment == "." {
       continue // Remove single dot segments

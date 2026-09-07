@@ -130,6 +130,18 @@ pub(all) enum StatusCode {
 } derive(Debug, ToJson, Eq)
 
 ///|
+pub extend StatusCode with Debug::{to_repr}
+
+///|
+pub extend StatusCode with ToJson::{to_json}
+
+///|
+pub extend StatusCode with Eq::{not_equal, equal}
+
+///|
+pub extend StatusCode with Show::{to_string, output}
+
+///|
 pub impl Show for StatusCode with fn output(self, logger) {
   match self {
     Continue => logger.write_string("Continue")

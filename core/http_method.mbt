@@ -18,6 +18,15 @@ pub(all) enum HttpMethod {
 } derive(Eq, Debug)
 
 ///|
+pub extend HttpMethod with Eq::{not_equal, equal}
+
+///|
+pub extend HttpMethod with Debug::{to_repr}
+
+///|
+pub extend HttpMethod with Show::{to_string, output}
+
+///|
 pub impl Show for HttpMethod with fn output(self, logger) {
   logger.write_string(self.to_method_string())
 }

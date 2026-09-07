@@ -18,12 +18,15 @@ pub fn text(&Show) -> &@core.Responder
 
 // Errors
 pub suberror ExecError derive(@debug.Debug)
+pub fn ExecError::to_repr(Self) -> @debug.Repr
 
 pub(all) suberror HttpError {
   HttpError(@core.StatusCode, String)
 } derive(@debug.Debug)
+pub fn HttpError::to_repr(Self) -> @debug.Repr
 
 pub suberror IOError derive(@debug.Debug)
+pub fn IOError::to_repr(Self) -> @debug.Repr
 
 pub suberror NativeServeError {
   InvalidMaxConnections(Int)
@@ -35,8 +38,11 @@ pub suberror NativeServeError {
   InvalidWebSocketOutgoingQueueCapacity(Int)
   InvalidWebSocketReadTimeoutMs(Int)
 } derive(ToJson, @debug.Debug)
+pub fn NativeServeError::to_json(Self) -> Json
+pub fn NativeServeError::to_repr(Self) -> @debug.Repr
 
 pub suberror NetworkError derive(@debug.Debug)
+pub fn NetworkError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
 pub struct App {
@@ -132,6 +138,9 @@ pub(all) struct StaticAssetMeta {
 pub fn StaticAssetMeta::StaticAssetMeta(asset_type? : String, etag? : String, mtime? : Int64, path? : String, size? : Int64, encoding? : String) -> Self
 
 type StaticResolvedResponder
+pub fn StaticResolvedResponder::options(Self, @core.HttpResponse) -> Unit
+pub fn StaticResolvedResponder::output(Self, @buffer.Buffer) -> Unit
+pub fn StaticResolvedResponder::output_bytes(Self) -> Bytes?
 pub impl @core.Responder for StaticResolvedResponder
 
 // Type aliases
@@ -168,4 +177,3 @@ pub(open) trait ServeStaticProvider {
   fn get_index_names(Self) -> Array[String]
   fn get_fallthrough(Self) -> Bool
 }
-

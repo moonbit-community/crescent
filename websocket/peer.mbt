@@ -17,7 +17,7 @@ pub fn WebSocketPeer::WebSocketPeer(
   connection_id~ : String,
   params? : Map[String, String],
 ) -> WebSocketPeer {
-  { connection_id, subscribed_channels: [], params: params.unwrap_or({}) }
+  { connection_id, subscribed_channels: [], params: params.unwrap_or({}), }
 }
 
 ///|
@@ -119,6 +119,15 @@ pub(all) enum NativeWebSocketOverflowPolicy {
   DropOldest
   DropLatest
 } derive(Debug, Eq)
+
+///|
+pub extend NativeWebSocketOverflowPolicy with Debug::{to_repr}
+
+///|
+pub extend NativeWebSocketOverflowPolicy with Eq::{not_equal, equal}
+
+///|
+pub extend NativeWebSocketOverflowPolicy with Show::{to_string, output}
 
 ///|
 pub impl Show for NativeWebSocketOverflowPolicy with fn output(self, logger) {
