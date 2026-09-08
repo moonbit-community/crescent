@@ -431,7 +431,7 @@ fn parse_query_no_fragment_then_done(
 
 ///|
 fn remove_dot_segments(path : Array[StringView]) -> Array[StringView] {
-  let output = Array()
+  let output = []
   for segment in path {
     if segment == "." {
       continue // Remove single dot segments
