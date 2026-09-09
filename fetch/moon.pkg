@@ -3,7 +3,6 @@ import {
   "bobzhang/crescent/uri",
   "bobzhang/crescent/httputil",
   "moonbitlang/async/http",
-  "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/test",
 }
