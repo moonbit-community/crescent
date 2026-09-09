@@ -26,7 +26,7 @@ jobs:
         run: moon update
 
       - name: moon check
-        run: moon check --deny-warn --target native --warn-list=-ambiguous_braces-lexmatch_longest_match
+        run: moon check --deny-warn --target native
 
       - name: moon build
         run: |
