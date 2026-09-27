@@ -3,7 +3,7 @@ name = "bobzhang/crescent_wasm_demo"
 version = "0.1.0"
 
 import {
-  "bobzhang/crescent@0.11.0",
+  "bobzhang/crescent@0.11.1",
   "moonbitlang/async@0.20.3",
 }
 
