@@ -50,7 +50,7 @@ async fn issue_request(
   port : Int,
   meth : @http.RequestMethod,
   path : String,
-  headers? : Map[String, String],
+  headers? : Map[@http.CaseInsensitiveString, String],
 ) -> (@http.Response, Bytes) {
   let client = @http.Client("http://127.0.0.1:\{port}")
   defer client.close()

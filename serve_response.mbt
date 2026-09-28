@@ -143,6 +143,17 @@ test "append_cookie_headers with multiple cookies joins with CRLF Set-Cookie" {
 }
 
 ///|
+/// Converts response headers into the case-insensitive map used by
+/// `moonbitlang/async/http`, keeping the original key spelling.
+fn to_async_http_headers(
+  headers : Map[String, String],
+) -> Map[@http.CaseInsensitiveString, String] {
+  let out : Map[@http.CaseInsensitiveString, String] = Map([])
+  headers.each((key, value) => out.set(key, value))
+  out
+}
+
+///|
 async fn send_raw_response_async(
   conn : @http.ServerConnection,
   response : HttpResponse,
@@ -220,6 +231,14 @@ async fn send_response_async(
     send_raw_response_async(conn, response, headers, false)
     return
   }
+  // `moonbitlang/async` (>= 0.22) treats a 2xx response to CONNECT as the
+  // start of a tunnel and refuses to frame a body for it. Keep Crescent's
+  // existing behavior (status, headers and body, then close) by writing the
+  // response in pass-through mode.
+  if request.meth == Connect && response.status_code.to_int() is (200..=299) {
+    send_raw_response_async(conn, response, headers, true)
+    return
+  }
   if @httputil.has_header_case_insensitive(headers, "Content-Encoding") {
     send_raw_response_async(conn, response, headers, true)
     return
@@ -227,7 +246,7 @@ async fn send_response_async(
   conn.send_response(
     response.status_code.to_int(),
     response.status_code.to_string(),
-    extra_headers=headers,
+    extra_headers=to_async_http_headers(headers),
     cookies=response.cookies.values().map(to_async_http_cookie).to_array(),
   )
   if !response.raw_body.is_empty() {
@@ -257,7 +276,7 @@ async fn send_response_and_close_async(
   conn.send_response(
     response.status_code.to_int(),
     response.status_code.to_string(),
-    extra_headers=headers,
+    extra_headers=to_async_http_headers(headers),
     cookies=response.cookies.values().map(to_async_http_cookie).to_array(),
   )
   if !response.raw_body.is_empty() {
