@@ -54,10 +54,7 @@ pub fn HttpResponse::error(
 ) -> HttpResponse {
   let res = HttpResponse(status_code=status)
   let json : Json = {
-    "error": {
-      "status": status.to_int().to_json(),
-      "message": message.to_json(),
-    },
+    "error": { "status": Json(status.to_int()), "message": Json(message) },
   }
   res.headers.set("Content-Type", "application/json; charset=utf-8")
   res.raw_body = @utf8.encode(json.stringify())
