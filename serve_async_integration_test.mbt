@@ -36,8 +36,8 @@ impl ServeStaticProvider for TestStaticProvider with fn get_meta(_, id) {
 ///|
 impl ServeStaticProvider for TestStaticProvider with fn get_contents(_, id) {
   match id {
-    "" => html("index")
-    "hello.txt" => text("hi")
+    "" => @crescent.html("index")
+    "hello.txt" => @crescent.text("hi")
     _ => @crescent.HttpResponse(status_code=NotFound).body("Not Found")
   }
 }
@@ -131,7 +131,10 @@ async fn wait_until_ready(port : Int) -> Unit {
 }
 
 ///|
-async fn with_test_server(app : App, run_test : async (Int) -> Unit) -> Unit {
+async fn with_test_server(
+  app : @crescent.App,
+  run_test : async (Int) -> Unit,
+) -> Unit {
   let server = allocate_test_server()
   let port = server.addr.port()
   app.get("/__app_ready", _ => "ready")
@@ -144,8 +147,8 @@ async fn with_test_server(app : App, run_test : async (Int) -> Unit) -> Unit {
 
 ///|
 async fn with_test_server_options(
-  app : App,
-  options~ : NativeServeOptions,
+  app : @crescent.App,
+  options~ : @crescent.NativeServeOptions,
   run_test : async (Int) -> Unit,
 ) -> Unit {
   let server = allocate_test_server()
@@ -160,7 +163,7 @@ async fn with_test_server_options(
 
 ///|
 async fn with_port_bound_test_server(
-  app : App,
+  app : @crescent.App,
   run_test : async (Int) -> Unit,
 ) -> Unit {
   app.get("/__app_ready", _ => "ready")
@@ -202,8 +205,8 @@ async fn with_port_bound_test_server(
 
 ///|
 async fn with_two_test_servers(
-  app1 : App,
-  app2 : App,
+  app1 : @crescent.App,
+  app2 : @crescent.App,
   run_test : async (Int, Int) -> Unit,
 ) -> Unit {
   let server1 = allocate_test_server()
@@ -1498,7 +1501,7 @@ async test "serve_on rejects non-positive max_connections" {
   try
     app.serve_on(server, options=NativeServeOptions(max_connections=0))
   catch {
-    NativeServeError::InvalidMaxConnections(0) => ()
+    @crescent.NativeServeError::InvalidMaxConnections(0) => ()
     err => fail("unexpected invalid max_connections error: \{err}")
   } noraise {
     _ => fail("expected serve_on to reject max_connections=0")
@@ -1509,7 +1512,7 @@ async test "serve_on rejects non-positive max_connections" {
 async test "serve rejects non-positive max_connections" {
   let app = @crescent.App()
   try app.serve(port=0, options=NativeServeOptions(max_connections=0)) catch {
-    NativeServeError::InvalidMaxConnections(0) => ()
+    @crescent.NativeServeError::InvalidMaxConnections(0) => ()
     err => fail("unexpected invalid max_connections error: \{err}")
   } noraise {
     _ => fail("expected serve to reject max_connections=0")
@@ -1734,7 +1737,7 @@ async test "serve_on rejects negative max_request_body_bytes" {
   try
     app.serve_on(server, options=NativeServeOptions(max_request_body_bytes=-1))
   catch {
-    NativeServeError::InvalidMaxRequestBodyBytes(-1) => ()
+    @crescent.NativeServeError::InvalidMaxRequestBodyBytes(-1) => ()
     err => fail("unexpected invalid max_request_body_bytes error: \{err}")
   } noraise {
     _ => fail("expected serve_on to reject max_request_body_bytes=-1")
@@ -1754,7 +1757,7 @@ async test "serve_on_until rejects negative max_request_body_bytes" {
       options=NativeServeOptions(max_request_body_bytes=-1),
     )
   catch {
-    NativeServeError::InvalidMaxRequestBodyBytes(-1) => ()
+    @crescent.NativeServeError::InvalidMaxRequestBodyBytes(-1) => ()
     err =>
       fail("unexpected serve_on_until max_request_body_bytes error: \{err}")
   } noraise {
@@ -1768,7 +1771,7 @@ async test "serve rejects negative max_request_body_bytes" {
   try
     app.serve(port=0, options=NativeServeOptions(max_request_body_bytes=-1))
   catch {
-    NativeServeError::InvalidMaxRequestBodyBytes(-1) => ()
+    @crescent.NativeServeError::InvalidMaxRequestBodyBytes(-1) => ()
     err => fail("unexpected invalid max_request_body_bytes error: \{err}")
   } noraise {
     _ => fail("expected serve to reject max_request_body_bytes=-1")
@@ -1786,7 +1789,7 @@ async test "serve_on rejects non-positive request_body_read_timeout_ms" {
       options=NativeServeOptions(request_body_read_timeout_ms=0),
     )
   catch {
-    NativeServeError::InvalidRequestBodyReadTimeoutMs(0) => ()
+    @crescent.NativeServeError::InvalidRequestBodyReadTimeoutMs(0) => ()
     err => fail("unexpected invalid request_body_read_timeout_ms error: \{err}")
   } noraise {
     _ => fail("expected serve_on to reject request_body_read_timeout_ms=0")
@@ -1806,7 +1809,7 @@ async test "serve_on_until rejects non-positive request_body_read_timeout_ms" {
       options=NativeServeOptions(request_body_read_timeout_ms=0),
     )
   catch {
-    NativeServeError::InvalidRequestBodyReadTimeoutMs(0) => ()
+    @crescent.NativeServeError::InvalidRequestBodyReadTimeoutMs(0) => ()
     err =>
       fail(
         "unexpected serve_on_until request_body_read_timeout_ms error: \{err}",
@@ -1826,7 +1829,7 @@ async test "serve rejects non-positive request_body_read_timeout_ms" {
       options=NativeServeOptions(request_body_read_timeout_ms=0),
     )
   catch {
-    NativeServeError::InvalidRequestBodyReadTimeoutMs(0) => ()
+    @crescent.NativeServeError::InvalidRequestBodyReadTimeoutMs(0) => ()
     err => fail("unexpected invalid request_body_read_timeout_ms error: \{err}")
   } noraise {
     _ => fail("expected serve to reject request_body_read_timeout_ms=0")
@@ -1844,7 +1847,7 @@ async test "serve_until rejects non-positive request_body_read_timeout_ms" {
       options=NativeServeOptions(request_body_read_timeout_ms=0),
     )
   catch {
-    NativeServeError::InvalidRequestBodyReadTimeoutMs(0) => ()
+    @crescent.NativeServeError::InvalidRequestBodyReadTimeoutMs(0) => ()
     err =>
       fail("unexpected serve_until request_body_read_timeout_ms error: \{err}")
   } noraise {
@@ -1863,7 +1866,7 @@ async test "serve_on rejects non-positive websocket_outgoing_queue_capacity" {
       options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
     )
   catch {
-    NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0) => ()
+    @crescent.NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0) => ()
     err =>
       fail("unexpected invalid websocket_outgoing_queue_capacity error: \{err}")
   } noraise {
@@ -1884,7 +1887,7 @@ async test "serve_on_until rejects non-positive websocket_outgoing_queue_capacit
       options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
     )
   catch {
-    NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0) => ()
+    @crescent.NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0) => ()
     err =>
       fail(
         "unexpected serve_on_until websocket_outgoing_queue_capacity error: \{err}",
@@ -1906,7 +1909,7 @@ async test "serve rejects non-positive websocket_outgoing_queue_capacity" {
       options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
     )
   catch {
-    NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0) => ()
+    @crescent.NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0) => ()
     err =>
       fail("unexpected invalid websocket_outgoing_queue_capacity error: \{err}")
   } noraise {
@@ -1925,7 +1928,7 @@ async test "serve_until rejects non-positive websocket_outgoing_queue_capacity" 
       options=NativeServeOptions(websocket_outgoing_queue_capacity=0),
     )
   catch {
-    NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0) => ()
+    @crescent.NativeServeError::InvalidWebSocketOutgoingQueueCapacity(0) => ()
     err =>
       fail(
         "unexpected serve_until websocket_outgoing_queue_capacity error: \{err}",
@@ -1947,7 +1950,7 @@ async test "serve_on rejects non-positive websocket_read_timeout_ms" {
       options=NativeServeOptions(websocket_read_timeout_ms=0),
     )
   catch {
-    NativeServeError::InvalidWebSocketReadTimeoutMs(0) => ()
+    @crescent.NativeServeError::InvalidWebSocketReadTimeoutMs(0) => ()
     err => fail("unexpected invalid websocket_read_timeout_ms error: \{err}")
   } noraise {
     _ => fail("expected serve_on to reject websocket_read_timeout_ms=0")
@@ -1967,7 +1970,7 @@ async test "serve_on_until rejects non-positive websocket_read_timeout_ms" {
       options=NativeServeOptions(websocket_read_timeout_ms=0),
     )
   catch {
-    NativeServeError::InvalidWebSocketReadTimeoutMs(0) => ()
+    @crescent.NativeServeError::InvalidWebSocketReadTimeoutMs(0) => ()
     err =>
       fail("unexpected serve_on_until websocket_read_timeout_ms error: \{err}")
   } noraise {
@@ -1981,7 +1984,7 @@ async test "serve rejects non-positive websocket_read_timeout_ms" {
   try
     app.serve(port=0, options=NativeServeOptions(websocket_read_timeout_ms=0))
   catch {
-    NativeServeError::InvalidWebSocketReadTimeoutMs(0) => ()
+    @crescent.NativeServeError::InvalidWebSocketReadTimeoutMs(0) => ()
     err => fail("unexpected invalid websocket_read_timeout_ms error: \{err}")
   } noraise {
     _ => fail("expected serve to reject websocket_read_timeout_ms=0")
@@ -1999,7 +2002,7 @@ async test "serve_until rejects non-positive websocket_read_timeout_ms" {
       options=NativeServeOptions(websocket_read_timeout_ms=0),
     )
   catch {
-    NativeServeError::InvalidWebSocketReadTimeoutMs(0) => ()
+    @crescent.NativeServeError::InvalidWebSocketReadTimeoutMs(0) => ()
     err =>
       fail("unexpected serve_until websocket_read_timeout_ms error: \{err}")
   } noraise {
@@ -2018,7 +2021,7 @@ async test "serve_on rejects negative websocket_max_message_bytes" {
       options=NativeServeOptions(websocket_max_message_bytes=-1),
     )
   catch {
-    NativeServeError::InvalidWebSocketMaxMessageBytes(-1) => ()
+    @crescent.NativeServeError::InvalidWebSocketMaxMessageBytes(-1) => ()
     err => fail("unexpected invalid websocket_max_message_bytes error: \{err}")
   } noraise {
     _ => fail("expected serve_on to reject websocket_max_message_bytes=-1")
@@ -2038,7 +2041,7 @@ async test "serve_on_until rejects negative websocket_max_message_bytes" {
       options=NativeServeOptions(websocket_max_message_bytes=-1),
     )
   catch {
-    NativeServeError::InvalidWebSocketMaxMessageBytes(-1) => ()
+    @crescent.NativeServeError::InvalidWebSocketMaxMessageBytes(-1) => ()
     err =>
       fail(
         "unexpected serve_on_until websocket_max_message_bytes error: \{err}",
@@ -2058,7 +2061,7 @@ async test "serve rejects negative websocket_max_message_bytes" {
       options=NativeServeOptions(websocket_max_message_bytes=-1),
     )
   catch {
-    NativeServeError::InvalidWebSocketMaxMessageBytes(-1) => ()
+    @crescent.NativeServeError::InvalidWebSocketMaxMessageBytes(-1) => ()
     err => fail("unexpected invalid websocket_max_message_bytes error: \{err}")
   } noraise {
     _ => fail("expected serve to reject websocket_max_message_bytes=-1")
@@ -2076,7 +2079,7 @@ async test "serve_until rejects negative websocket_max_message_bytes" {
       options=NativeServeOptions(websocket_max_message_bytes=-1),
     )
   catch {
-    NativeServeError::InvalidWebSocketMaxMessageBytes(-1) => ()
+    @crescent.NativeServeError::InvalidWebSocketMaxMessageBytes(-1) => ()
     err =>
       fail("unexpected serve_until websocket_max_message_bytes error: \{err}")
   } noraise {
@@ -2150,7 +2153,7 @@ async test "serve_until rejects negative max_request_body_bytes" {
       options=NativeServeOptions(max_request_body_bytes=-1),
     )
   catch {
-    NativeServeError::InvalidMaxRequestBodyBytes(-1) => ()
+    @crescent.NativeServeError::InvalidMaxRequestBodyBytes(-1) => ()
     err => fail("unexpected serve_until max_request_body_bytes error: \{err}")
   } noraise {
     _ => fail("expected serve_until to reject max_request_body_bytes=-1")
