@@ -68,7 +68,7 @@ struct JsonDemoUser {
 ///|
 test "json_value sets content-type and serializes body" {
   let user = JsonDemoUser::{ name: "Alice", age: 30, }
-  let res = HttpResponse::ok().json_value(user)
+  let res = @crescent.HttpResponse::ok().json_value(user)
   debug_inspect(
     res,
     content=(
@@ -105,17 +105,17 @@ fn build_app() -> @crescent.App {
   let next_id = Ref::Ref(2)
 
   // List all
-  app.get("/api/todos", _ => HttpResponse::ok().json_value(todos))
+  app.get("/api/todos", _ => @crescent.HttpResponse::ok().json_value(todos))
 
   // Get by ID — require_param_int auto-returns 400 for "abc"
   app.get("/api/todos/:id", event => {
     let id = event.require_param_int("id")
     for todo in todos {
       if todo.id == id {
-        return HttpResponse::ok().json_value(todo)
+        return @crescent.HttpResponse::ok().json_value(todo)
       }
     }
-    raise HttpError::HttpError(NotFound, "todo \{id} not found")
+    raise @crescent.HttpError::HttpError(NotFound, "todo \{id} not found")
   })
 
   // Create — event.json() auto-returns 400 for invalid JSON
@@ -124,7 +124,7 @@ fn build_app() -> @crescent.App {
     let todo = Todo::{ id: next_id.val, title: input.title, done: false, }
     next_id.val += 1
     todos.push(todo)
-    HttpResponse::created().json_value(todo)
+    @crescent.HttpResponse::created().json_value(todo)
   })
 
   // Health check — get_raw for handlers that never raise
@@ -164,7 +164,7 @@ fn _build_app() -> @crescent.App {
     (event, next) => {
       match event.req.get_header("Authorization") {
         Some(_) => next()
-        None => HttpResponse::unauthorized()
+        None => @crescent.HttpResponse::unauthorized()
       }
     },
     base_path="/api",
@@ -259,7 +259,7 @@ async test "typed handler auto-maps errors" {
   let app = @crescent.App()
   app.post("/todos", event => {
     let input : TodoInput = event.json()
-    HttpResponse::created().json_value(input)
+    @crescent.HttpResponse::created().json_value(input)
   })
   let client = @test_client.TestClient(app)
 
@@ -350,21 +350,21 @@ async test "resource CRUD" {
   app.resource(
     "/items",
     ResourceConfig(
-      list=_ => HttpResponse::ok().json_value(items),
+      list=_ => @crescent.HttpResponse::ok().json_value(items),
       get=event => {
         let id = event.require_param_int("id")
         for item in items {
           if item.id == id {
-            return HttpResponse::ok().json_value(item)
+            return @crescent.HttpResponse::ok().json_value(item)
           }
         }
-        raise HttpError::HttpError(NotFound, "not found")
+        raise @crescent.HttpError::HttpError(NotFound, "not found")
       },
       create=event => {
         let input : CreateResItem = event.json()
         let item = ResItem::{ id: 2, name: input.name, }
         items.push(item)
-        HttpResponse::created().json_value(item)
+        @crescent.HttpResponse::created().json_value(item)
       },
     ),
   )
@@ -650,25 +650,25 @@ Methods: `@fetch.get`, `@fetch.post`, `@fetch.put`, `@fetch.patch`,
 ```mbt check
 ///|
 test "response helpers" {
-  let ok = HttpResponse::ok()
+  let ok = @crescent.HttpResponse::ok()
   assert_eq(ok.status_code, OK)
 
-  let created = HttpResponse::created()
+  let created = @crescent.HttpResponse::created()
   assert_eq(created.status_code, Created)
 
-  let not_found = HttpResponse::not_found()
+  let not_found = @crescent.HttpResponse::not_found()
   assert_eq(not_found.status_code, NotFound)
 
-  let no_content = HttpResponse::no_content()
+  let no_content = @crescent.HttpResponse::no_content()
   assert_eq(no_content.status_code, NoContent)
 
-  let bad_request = HttpResponse::bad_request()
+  let bad_request = @crescent.HttpResponse::bad_request()
   assert_eq(bad_request.status_code, BadRequest)
 }
 
 ///|
 test "fluent response building" {
-  let res = HttpResponse::ok()
+  let res = @crescent.HttpResponse::ok()
     .header("X-Custom", "value")
     .header("Cache-Control", "max-age=3600")
   guard res.headers
@@ -679,11 +679,11 @@ test "fluent response building" {
 
 ///|
 test "redirect helpers" {
-  let r301 = HttpResponse::redirect("/new")
+  let r301 = @crescent.HttpResponse::redirect("/new")
   assert_eq(r301.status_code, MovedPermanently)
   assert_eq(r301.headers.get("Location"), Some("/new"))
 
-  let r302 = HttpResponse::redirect_temporary("/temp")
+  let r302 = @crescent.HttpResponse::redirect_temporary("/temp")
   assert_eq(r302.status_code, Found)
 }
 ```
@@ -762,7 +762,7 @@ fn rate_limiter() -> Middleware {
 ```mbt check
 ///|
 test "param and param_int" {
-  let event = Event::{
+  let event = @crescent.Event::{
     req: HttpRequest(Get, "/", {}, raw_body=b""),
     res: HttpResponse(status_code=OK),
     params: { "id": "42", "name": "alice" },
@@ -774,7 +774,7 @@ test "param and param_int" {
 
 ///|
 test "require_param raises on missing" {
-  let event = Event::{
+  let event = @crescent.Event::{
     req: HttpRequest(Get, "/", {}, raw_body=b""),
     res: HttpResponse(status_code=OK),
     params: {},
@@ -861,9 +861,9 @@ Pattern match on the request method — no string comparisons:
 ```mbt check
 ///|
 test "HttpMethod round-trip" {
-  let meth : HttpMethod = Post
+  let meth : @crescent.HttpMethod = Post
   assert_eq(meth.to_method_string(), "POST")
-  assert_eq(HttpMethod::from_string("POST"), Post)
+  assert_eq(@crescent.HttpMethod::from_string("POST"), Post)
 }
 
 ///|
