@@ -13,7 +13,7 @@ fn make_event(
 ///|
 test "origin=* with credentials=true reflects request origin" {
   let event = make_event(Get, { "origin": "https://myapp.com" })
-  append_cors_headers(event, origin="*", credentials=true)
+  @cors.append_cors_headers(event, origin="*", credentials=true)
   guard event.res.headers
     is {
       "Access-Control-Allow-Origin": "https://myapp.com",
@@ -28,7 +28,11 @@ test "origin=* with credentials=true reflects request origin" {
 ///|
 test "explicit origin is preserved with credentials" {
   let event = make_event(Get, { "origin": "https://myapp.com" })
-  append_cors_headers(event, origin="https://allowed.com", credentials=true)
+  @cors.append_cors_headers(
+    event,
+    origin="https://allowed.com",
+    credentials=true,
+  )
   assert_eq(
     event.res.headers.get("Access-Control-Allow-Origin"),
     Some("https://allowed.com"),
@@ -40,7 +44,7 @@ test "Vary header handles existing lowercase vary" {
   let event = make_event(Get, { "origin": "https://myapp.com" })
   // Pre-populate a lowercase Vary header with a different token
   event.res.headers["vary"] = "Accept-Encoding"
-  append_cors_headers(event, origin="*", credentials=true)
+  @cors.append_cors_headers(event, origin="*", credentials=true)
   // Should append Origin to the existing (lowercase) Vary header,
   // not create a duplicate.
   let mut vary_count = 0
@@ -60,7 +64,7 @@ test "Vary header handles existing lowercase vary" {
 test "Vary header doesn't duplicate Origin token" {
   let event = make_event(Get, { "origin": "https://myapp.com" })
   event.res.headers["Vary"] = "Origin"
-  append_cors_headers(event, origin="*", credentials=true)
+  @cors.append_cors_headers(event, origin="*", credentials=true)
   // Should not create "Origin, Origin"
   assert_eq(event.res.headers.get("Vary"), Some("Origin"))
 }
@@ -68,14 +72,14 @@ test "Vary header doesn't duplicate Origin token" {
 ///|
 test "origin=* without credentials stays as *" {
   let event = make_event(Get, { "origin": "https://any.com" })
-  append_cors_headers(event, origin="*", credentials=false)
+  @cors.append_cors_headers(event, origin="*", credentials=false)
   assert_eq(event.res.headers.get("Access-Control-Allow-Origin"), Some("*"))
 }
 
 ///|
 test "is_preflight_request requires cors headers and options" {
   debug_inspect(
-    is_preflight_request(
+    @cors.is_preflight_request(
       make_event(Options, {
         "origin": "https://example.com",
         "access-control-request-method": "PUT",
@@ -84,13 +88,13 @@ test "is_preflight_request requires cors headers and options" {
     content="true",
   )
   debug_inspect(
-    is_preflight_request(
+    @cors.is_preflight_request(
       make_event(Options, { "origin": "https://example.com" }),
     ),
     content="false",
   )
   debug_inspect(
-    is_preflight_request(
+    @cors.is_preflight_request(
       make_event(Get, {
         "origin": "https://example.com",
         "access-control-request-method": "PUT",
@@ -178,7 +182,7 @@ async test "handle_cors serves preflight requests through async server" {
   let handler_called = Ref(false)
   let app = @crescent.App()
   app.use_middleware(
-    handle_cors(
+    @cors.handle_cors(
       origin="https://frontend.example",
       methods="GET, PATCH",
       allow_headers="Content-Type, Authorization",
@@ -216,7 +220,7 @@ async test "handle_cors serves preflight requests through async server" {
 async test "handle_cors decorates normal requests through async server" {
   let app = @crescent.App()
   app.use_middleware(
-    handle_cors(
+    @cors.handle_cors(
       origin="https://frontend.example",
       methods="GET, POST",
       allow_headers="Content-Type",
@@ -250,7 +254,7 @@ async test "handle_cors does not short-circuit non-preflight options" {
   let handler_called = Ref(false)
   let app = @crescent.App()
   app.use_middleware(
-    handle_cors(
+    @cors.handle_cors(
       origin="https://frontend.example",
       methods="GET, OPTIONS",
       allow_headers="Content-Type",
@@ -289,7 +293,7 @@ async test "handle_cors does not short-circuit non-preflight options" {
 async test "handle_cors accepts mixed-case preflight headers" {
   let app = @crescent.App()
   app.use_middleware(
-    handle_cors(
+    @cors.handle_cors(
       origin="https://frontend.example",
       methods="GET, PATCH",
       allow_headers="Content-Type, Authorization",

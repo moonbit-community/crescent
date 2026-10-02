@@ -5,11 +5,11 @@ test "get_header_case_insensitive returns value" {
     "Host": "example.com",
   }
   debug_inspect(
-    get_header_case_insensitive(headers, "content-type"),
+    @httputil.get_header_case_insensitive(headers, "content-type"),
     content="Some(\"application/json\")",
   )
   debug_inspect(
-    get_header_case_insensitive(headers, "HOST"),
+    @httputil.get_header_case_insensitive(headers, "HOST"),
     content="Some(\"example.com\")",
   )
 }
@@ -17,14 +17,17 @@ test "get_header_case_insensitive returns value" {
 ///|
 test "get_header_case_insensitive returns None for missing" {
   let headers : Map[String, String] = { "Host": "example.com" }
-  debug_inspect(get_header_case_insensitive(headers, "Accept"), content="None")
+  debug_inspect(
+    @httputil.get_header_case_insensitive(headers, "Accept"),
+    content="None",
+  )
 }
 
 ///|
 test "get_header_case_insensitive empty map" {
   let headers : Map[String, String] = Map([])
   debug_inspect(
-    get_header_case_insensitive(headers, "Content-Type"),
+    @httputil.get_header_case_insensitive(headers, "Content-Type"),
     content="None",
   )
 }
@@ -32,34 +35,45 @@ test "get_header_case_insensitive empty map" {
 ///|
 test "has_header_case_insensitive finds present header" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  assert_eq(has_header_case_insensitive(headers, "Content-Type"), true)
-  assert_eq(has_header_case_insensitive(headers, "content-type"), true)
-  assert_eq(has_header_case_insensitive(headers, "CONTENT-TYPE"), true)
+  assert_eq(
+    @httputil.has_header_case_insensitive(headers, "Content-Type"),
+    true,
+  )
+  assert_eq(
+    @httputil.has_header_case_insensitive(headers, "content-type"),
+    true,
+  )
+  assert_eq(
+    @httputil.has_header_case_insensitive(headers, "CONTENT-TYPE"),
+    true,
+  )
 }
 
 ///|
 test "has_header_case_insensitive returns false for missing" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  assert_eq(has_header_case_insensitive(headers, "Accept"), false)
+  assert_eq(@httputil.has_header_case_insensitive(headers, "Accept"), false)
 }
 
 ///|
 test "has_header_case_insensitive empty map" {
   let headers : Map[String, String] = Map([])
-  assert_eq(has_header_case_insensitive(headers, "Host"), false)
+  assert_eq(@httputil.has_header_case_insensitive(headers, "Host"), false)
 }
 
 ///|
 test "set_header_case_insensitive adds new header" {
   let headers : Map[String, String] = Map([])
-  set_header_case_insensitive(headers, "Content-Type", "text/html")
+  @httputil.set_header_case_insensitive(headers, "Content-Type", "text/html")
   debug_inspect(headers.get("Content-Type"), content="Some(\"text/html\")")
 }
 
 ///|
 test "set_header_case_insensitive overwrites existing exact key" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  set_header_case_insensitive(headers, "Content-Type", "application/json")
+  @httputil.set_header_case_insensitive(
+    headers, "Content-Type", "application/json",
+  )
   debug_inspect(
     headers.get("Content-Type"),
     content="Some(\"application/json\")",
@@ -70,7 +84,9 @@ test "set_header_case_insensitive overwrites existing exact key" {
 ///|
 test "set_header_case_insensitive overwrites with different case and replaces key" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  set_header_case_insensitive(headers, "content-type", "application/json")
+  @httputil.set_header_case_insensitive(
+    headers, "content-type", "application/json",
+  )
   // The old key should be removed and replaced with the new casing
   debug_inspect(headers.get("Content-Type"), content="None")
   debug_inspect(
@@ -86,7 +102,7 @@ test "set_header_case_insensitive with multiple headers" {
     "Host": "example.com",
     "Accept": "text/html",
   }
-  set_header_case_insensitive(headers, "host", "other.com")
+  @httputil.set_header_case_insensitive(headers, "host", "other.com")
   debug_inspect(headers.get("host"), content="Some(\"other.com\")")
   // Accept should remain untouched
   debug_inspect(headers.get("Accept"), content="Some(\"text/html\")")
@@ -95,14 +111,16 @@ test "set_header_case_insensitive with multiple headers" {
 ///|
 test "set_missing_header_case_insensitive adds when absent" {
   let headers : Map[String, String] = Map([])
-  set_missing_header_case_insensitive(headers, "Content-Type", "text/html")
+  @httputil.set_missing_header_case_insensitive(
+    headers, "Content-Type", "text/html",
+  )
   debug_inspect(headers.get("Content-Type"), content="Some(\"text/html\")")
 }
 
 ///|
 test "set_missing_header_case_insensitive does not overwrite existing exact" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  set_missing_header_case_insensitive(
+  @httputil.set_missing_header_case_insensitive(
     headers, "Content-Type", "application/json",
   )
   debug_inspect(headers.get("Content-Type"), content="Some(\"text/html\")")
@@ -111,7 +129,7 @@ test "set_missing_header_case_insensitive does not overwrite existing exact" {
 ///|
 test "set_missing_header_case_insensitive does not overwrite case-insensitive match" {
   let headers : Map[String, String] = { "Content-Type": "text/html" }
-  set_missing_header_case_insensitive(
+  @httputil.set_missing_header_case_insensitive(
     headers, "content-type", "application/json",
   )
   // Original value and key preserved
@@ -122,8 +140,8 @@ test "set_missing_header_case_insensitive does not overwrite case-insensitive ma
 ///|
 test "set_missing_header_case_insensitive adds multiple distinct headers" {
   let headers : Map[String, String] = Map([])
-  set_missing_header_case_insensitive(headers, "Host", "example.com")
-  set_missing_header_case_insensitive(headers, "Accept", "text/html")
+  @httputil.set_missing_header_case_insensitive(headers, "Host", "example.com")
+  @httputil.set_missing_header_case_insensitive(headers, "Accept", "text/html")
   assert_eq(headers.length(), 2)
   debug_inspect(headers.get("Host"), content="Some(\"example.com\")")
   debug_inspect(headers.get("Accept"), content="Some(\"text/html\")")
@@ -136,7 +154,7 @@ test "merge_headers_case_insensitive into empty target" {
     "Host": "example.com",
     "Accept": "text/html",
   }
-  merge_headers_case_insensitive(target, source)
+  @httputil.merge_headers_case_insensitive(target, source)
   assert_eq(target.length(), 2)
   debug_inspect(target.get("Host"), content="Some(\"example.com\")")
   debug_inspect(target.get("Accept"), content="Some(\"text/html\")")
@@ -146,7 +164,7 @@ test "merge_headers_case_insensitive into empty target" {
 test "merge_headers_case_insensitive from empty source" {
   let target : Map[String, String] = { "Host": "example.com" }
   let source : Map[String, String] = Map([])
-  merge_headers_case_insensitive(target, source)
+  @httputil.merge_headers_case_insensitive(target, source)
   assert_eq(target.length(), 1)
   debug_inspect(target.get("Host"), content="Some(\"example.com\")")
 }
@@ -155,7 +173,7 @@ test "merge_headers_case_insensitive from empty source" {
 test "merge_headers_case_insensitive overwrites existing case-insensitive" {
   let target : Map[String, String] = { "Content-Type": "text/html" }
   let source : Map[String, String] = { "content-type": "application/json" }
-  merge_headers_case_insensitive(target, source)
+  @httputil.merge_headers_case_insensitive(target, source)
   assert_eq(target.length(), 1)
   debug_inspect(
     target.get("content-type"),
@@ -173,7 +191,7 @@ test "merge_headers_case_insensitive adds new and overwrites existing" {
     "host": "other.com",
     "Content-Type": "application/json",
   }
-  merge_headers_case_insensitive(target, source)
+  @httputil.merge_headers_case_insensitive(target, source)
   assert_eq(target.length(), 3)
   debug_inspect(target.get("host"), content="Some(\"other.com\")")
   debug_inspect(target.get("Accept"), content="Some(\"text/html\")")
