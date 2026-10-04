@@ -230,7 +230,7 @@ async fn issue_request(
   meth : @http.RequestMethod,
   path : String,
   body? : Bytes,
-  headers? : Map[String, String],
+  headers? : Map[@http.CaseInsensitiveString, String],
 ) -> (@http.Response, Bytes) {
   let client = @http.Client("http://127.0.0.1:\{port}")
   defer client.close()
@@ -2502,7 +2502,7 @@ async test "serve preserves content-encoding for encoded static assets" {
       headers={ "Accept-Encoding": "gzip" },
     )
     assert_eq(head_response.code, 200)
-    guard head_response.headers
+    guard plain_headers(head_response.headers)
       is { "content-encoding": "gzip", "content-length": "7", .. } else {
       fail(
         "expected HEAD response to preserve content-encoding and content-length",
@@ -2750,13 +2750,14 @@ async test "serve binds by port and dispatches trace and connect routes" {
     assert_eq(trace_response.code, 200)
     inspect(@utf8.decode(trace_body) catch { _ => "" }, content="trace")
 
-    let (connect_response, connect_body) = issue_request(
+    // The async HTTP client treats a 2xx CONNECT response as a tunnel with no
+    // framed body, so read the raw response to check what the route sent.
+    let (connect_headers, connect_body) = issue_raw_request_response(
       port,
-      Connect,
-      "/connect",
+      "CONNECT /connect HTTP/1.1\r\nHost: 127.0.0.1:\{port}\r\n\r\n",
     )
-    assert_eq(connect_response.code, 200)
-    inspect(@utf8.decode(connect_body) catch { _ => "" }, content="connect")
+    assert_true(connect_headers.has_prefix("HTTP/1.1 200 "))
+    inspect(connect_body, content="connect")
   }) catch {
     SocketBindUnavailable => return
     err => raise err
@@ -4900,4 +4901,14 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
     SocketBindUnavailable => return
     err => raise err
   }
+}
+
+///|
+/// Lower-cases header names so tests can pattern-match on a plain map.
+fn plain_headers(
+  headers : Map[@http.CaseInsensitiveString, String],
+) -> Map[String, String] {
+  let out : Map[String, String] = Map([])
+  headers.each((key, value) => out.set(key.0.to_lower(), value))
+  out
 }

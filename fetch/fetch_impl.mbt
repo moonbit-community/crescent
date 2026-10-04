@@ -221,6 +221,29 @@ fn fetch_origin(protocol : FetchProtocol, host : String, port : Int) -> String {
 }
 
 ///|
+/// Converts plain headers into the case-insensitive map used by
+/// `moonbitlang/async/http`, keeping the original key spelling.
+fn to_async_http_headers(
+  headers : Map[String, String],
+) -> Map[@http.CaseInsensitiveString, String] {
+  let out : Map[@http.CaseInsensitiveString, String] = Map([])
+  headers.each((key, value) => out.set(key, value))
+  out
+}
+
+///|
+/// Converts `moonbitlang/async/http` headers back into a plain map. Header
+/// names are lower-cased, matching what callers observed before
+/// `moonbitlang/async` switched to case-insensitive, case-preserving keys.
+fn from_async_http_headers(
+  headers : Map[@http.CaseInsensitiveString, String],
+) -> Map[String, String] {
+  let out : Map[String, String] = Map([])
+  headers.each((key, value) => out.set(key.0.to_lower(), value))
+  out
+}
+
+///|
 fn prepare_fetch_payload_bytes(
   body : String?,
   data : &@core.Responder?,
@@ -277,7 +300,7 @@ pub async fn fetch(
     client.request(
       request_method_to_async(http_method),
       path,
-      extra_headers=req_headers,
+      extra_headers=to_async_http_headers(req_headers),
     )
     match req_body {
       Some(body_bytes) => client.write(body_bytes)
@@ -292,7 +315,7 @@ pub async fn fetch(
     }
   HttpResponse(
     status_code=@core.StatusCode::from_int(response.code),
-    headers=@httputil.copy_headers(response.headers),
+    headers=from_async_http_headers(response.headers),
     raw_body=response_body,
   )
 }

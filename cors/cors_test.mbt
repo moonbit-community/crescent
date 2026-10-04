@@ -156,7 +156,7 @@ async fn issue_request(
   port : Int,
   meth : @http.RequestMethod,
   path : String,
-  headers? : Map[String, String],
+  headers? : Map[@http.CaseInsensitiveString, String],
 ) -> (@http.Response, Bytes) {
   let client = @http.Client("http://127.0.0.1:\{port}")
   defer client.close()
@@ -201,7 +201,7 @@ async test "handle_cors serves preflight requests through async server" {
     })
     assert_eq(response.code, 200)
     assert_eq(body, b"")
-    guard response.headers
+    guard plain_headers(response.headers)
       is {
         "access-control-allow-origin": "https://frontend.example",
         "access-control-allow-methods": "GET, PATCH",
@@ -235,7 +235,7 @@ async test "handle_cors decorates normal requests through async server" {
     })
     assert_eq(response.code, 200)
     assert_eq(@utf8.decode(body) catch { _ => "" }, "ok")
-    guard response.headers
+    guard plain_headers(response.headers)
       is {
         "access-control-allow-origin": "https://frontend.example",
         "access-control-allow-methods": "GET, POST",
@@ -272,7 +272,7 @@ async test "handle_cors does not short-circuit non-preflight options" {
     })
     assert_eq(response.code, 200)
     assert_eq(@utf8.decode(body) catch { _ => "" }, "regular-options")
-    guard response.headers
+    guard plain_headers(response.headers)
       is {
         "access-control-allow-origin": "https://frontend.example",
         "access-control-allow-methods": "GET, OPTIONS",
@@ -325,4 +325,14 @@ async test "handle_cors accepts mixed-case preflight headers" {
     )
     assert_true(response_headers.contains("Access-Control-Max-Age: 7200"))
   })
+}
+
+///|
+/// Lower-cases header names so tests can pattern-match on a plain map.
+fn plain_headers(
+  headers : Map[@http.CaseInsensitiveString, String],
+) -> Map[String, String] {
+  let out : Map[String, String] = Map([])
+  headers.each((key, value) => out.set(key.0.to_lower(), value))
+  out
 }
