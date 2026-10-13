@@ -1,7 +1,7 @@
 ///|
 async test "request_id middleware generates unique ids" {
   let app = @crescent.App()
-  app.use_middleware(request_id())
+  app.use_middleware(@middleware.request_id())
   app.get("/test", event => {
     let id = event.request_id()
     match id {
@@ -28,7 +28,7 @@ async test "request_id middleware generates unique ids" {
 ///|
 async test "request_id middleware preserves existing id" {
   let app = @crescent.App()
-  app.use_middleware(request_id())
+  app.use_middleware(@middleware.request_id())
   app.get("/test", event => {
     match event.request_id() {
       Some(id) => id

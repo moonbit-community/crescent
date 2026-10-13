@@ -1,19 +1,19 @@
 ///|
 test "request_target_path extracts path from plain path" {
   debug_inspect(
-    request_target_path("/"),
+    @httputil.request_target_path("/"),
     content=(
       #|"/"
     ),
   )
   debug_inspect(
-    request_target_path("/index.html"),
+    @httputil.request_target_path("/index.html"),
     content=(
       #|"/index.html"
     ),
   )
   debug_inspect(
-    request_target_path("/a/b/c"),
+    @httputil.request_target_path("/a/b/c"),
     content=(
       #|"/a/b/c"
     ),
@@ -23,19 +23,19 @@ test "request_target_path extracts path from plain path" {
 ///|
 test "request_target_path strips query string" {
   debug_inspect(
-    request_target_path("/search?q=hello"),
+    @httputil.request_target_path("/search?q=hello"),
     content=(
       #|"/search"
     ),
   )
   debug_inspect(
-    request_target_path("/?key=val"),
+    @httputil.request_target_path("/?key=val"),
     content=(
       #|"/"
     ),
   )
   debug_inspect(
-    request_target_path("/a/b?x=1&y=2"),
+    @httputil.request_target_path("/a/b?x=1&y=2"),
     content=(
       #|"/a/b"
     ),
@@ -45,13 +45,13 @@ test "request_target_path strips query string" {
 ///|
 test "request_target_path strips fragment" {
   debug_inspect(
-    request_target_path("/page#section"),
+    @httputil.request_target_path("/page#section"),
     content=(
       #|"/page"
     ),
   )
   debug_inspect(
-    request_target_path("/#top"),
+    @httputil.request_target_path("/#top"),
     content=(
       #|"/"
     ),
@@ -61,13 +61,13 @@ test "request_target_path strips fragment" {
 ///|
 test "request_target_path strips query and fragment" {
   debug_inspect(
-    request_target_path("/page?q=1#frag"),
+    @httputil.request_target_path("/page?q=1#frag"),
     content=(
       #|"/page"
     ),
   )
   debug_inspect(
-    request_target_path("/a/b?x=1&y=2#z"),
+    @httputil.request_target_path("/a/b?x=1&y=2#z"),
     content=(
       #|"/a/b"
     ),
@@ -78,7 +78,7 @@ test "request_target_path strips query and fragment" {
 test "request_target_path with fragment before query uses earliest delimiter" {
   // '#' appears before '?' so path ends at '#'
   debug_inspect(
-    request_target_path("/page#frag?q=1"),
+    @httputil.request_target_path("/page#frag?q=1"),
     content=(
       #|"/page"
     ),
@@ -88,7 +88,7 @@ test "request_target_path with fragment before query uses earliest delimiter" {
 ///|
 test "request_target_path with empty path" {
   debug_inspect(
-    request_target_path(""),
+    @httputil.request_target_path(""),
     content=(
       #|""
     ),
@@ -100,25 +100,25 @@ test "request_target_path extracts path from absolute-form URLs" {
   // Regression test: previously the "//" normalization collapsed the scheme
   // separator, turning "http://host/path" into "http:/host/path"
   debug_inspect(
-    request_target_path("http://example.com/path"),
+    @httputil.request_target_path("http://example.com/path"),
     content=(
       #|"/path"
     ),
   )
   debug_inspect(
-    request_target_path("https://api.example.com/users/42"),
+    @httputil.request_target_path("https://api.example.com/users/42"),
     content=(
       #|"/users/42"
     ),
   )
   debug_inspect(
-    request_target_path("http://example.com/search?q=hello"),
+    @httputil.request_target_path("http://example.com/search?q=hello"),
     content=(
       #|"/search"
     ),
   )
   debug_inspect(
-    request_target_path("https://example.com/page#frag"),
+    @httputil.request_target_path("https://example.com/page#frag"),
     content=(
       #|"/page"
     ),
@@ -128,13 +128,13 @@ test "request_target_path extracts path from absolute-form URLs" {
 ///|
 test "request_target_path absolute-form without path returns /" {
   debug_inspect(
-    request_target_path("http://example.com"),
+    @httputil.request_target_path("http://example.com"),
     content=(
       #|"/"
     ),
   )
   debug_inspect(
-    request_target_path("https://api.example.com"),
+    @httputil.request_target_path("https://api.example.com"),
     content=(
       #|"/"
     ),
@@ -145,13 +145,13 @@ test "request_target_path absolute-form without path returns /" {
 test "request_target_path still normalizes path double-slashes" {
   // //internal// path segments should still collapse
   debug_inspect(
-    request_target_path("/a//b"),
+    @httputil.request_target_path("/a//b"),
     content=(
       #|"/a/b"
     ),
   )
   debug_inspect(
-    request_target_path("//foo"),
+    @httputil.request_target_path("//foo"),
     content=(
       #|"/foo"
     ),
@@ -160,28 +160,40 @@ test "request_target_path still normalizes path double-slashes" {
 
 ///|
 test "request_target_query_string returns None for plain paths" {
-  assert_eq(request_target_query_string("/"), None)
-  assert_eq(request_target_query_string("/index.html"), None)
-  assert_eq(request_target_query_string("/a/b/c"), None)
+  assert_eq(@httputil.request_target_query_string("/"), None)
+  assert_eq(@httputil.request_target_query_string("/index.html"), None)
+  assert_eq(@httputil.request_target_query_string("/a/b/c"), None)
 }
 
 ///|
 test "request_target_query_string extracts query" {
-  assert_eq(request_target_query_string("/search?q=hello"), Some("q=hello"))
-  assert_eq(request_target_query_string("/?key=val"), Some("key=val"))
-  assert_eq(request_target_query_string("/a/b?x=1&y=2"), Some("x=1&y=2"))
+  assert_eq(
+    @httputil.request_target_query_string("/search?q=hello"),
+    Some("q=hello"),
+  )
+  assert_eq(@httputil.request_target_query_string("/?key=val"), Some("key=val"))
+  assert_eq(
+    @httputil.request_target_query_string("/a/b?x=1&y=2"),
+    Some("x=1&y=2"),
+  )
 }
 
 ///|
 test "request_target_query_string extracts query before fragment" {
-  assert_eq(request_target_query_string("/page?q=1#frag"), Some("q=1"))
-  assert_eq(request_target_query_string("/a?x=1&y=2#z"), Some("x=1&y=2"))
+  assert_eq(
+    @httputil.request_target_query_string("/page?q=1#frag"),
+    Some("q=1"),
+  )
+  assert_eq(
+    @httputil.request_target_query_string("/a?x=1&y=2#z"),
+    Some("x=1&y=2"),
+  )
 }
 
 ///|
 test "request_target_query_string returns None for fragment-only" {
-  assert_eq(request_target_query_string("/page#section"), None)
-  assert_eq(request_target_query_string("/#top"), None)
+  assert_eq(@httputil.request_target_query_string("/page#section"), None)
+  assert_eq(@httputil.request_target_query_string("/#top"), None)
 }
 
 ///|
@@ -190,46 +202,49 @@ test "request_target_query_string with fragment before query" {
   // The function finds '?' at index 10, then finds '#' at index 5 which is
   // NOT > query_start, so end stays at string length, returning everything
   // after '?'
-  assert_eq(request_target_query_string("/page#frag?q=1"), Some("q=1"))
+  assert_eq(
+    @httputil.request_target_query_string("/page#frag?q=1"),
+    Some("q=1"),
+  )
 }
 
 ///|
 test "request_target_query_string with empty query" {
-  assert_eq(request_target_query_string("/page?"), Some(""))
-  assert_eq(request_target_query_string("/page?#frag"), Some(""))
+  assert_eq(@httputil.request_target_query_string("/page?"), Some(""))
+  assert_eq(@httputil.request_target_query_string("/page?#frag"), Some(""))
 }
 
 ///|
 test "path_scope_matches root scope matches everything" {
-  assert_eq(path_scope_matches("/", "/"), true)
-  assert_eq(path_scope_matches("/", "/anything"), true)
-  assert_eq(path_scope_matches("/", "/a/b/c"), true)
+  assert_eq(@httputil.path_scope_matches("/", "/"), true)
+  assert_eq(@httputil.path_scope_matches("/", "/anything"), true)
+  assert_eq(@httputil.path_scope_matches("/", "/a/b/c"), true)
 }
 
 ///|
 test "path_scope_matches exact match" {
-  assert_eq(path_scope_matches("/api", "/api"), true)
-  assert_eq(path_scope_matches("/a/b", "/a/b"), true)
+  assert_eq(@httputil.path_scope_matches("/api", "/api"), true)
+  assert_eq(@httputil.path_scope_matches("/a/b", "/a/b"), true)
 }
 
 ///|
 test "path_scope_matches prefix with segment boundary" {
-  assert_eq(path_scope_matches("/api", "/api/users"), true)
-  assert_eq(path_scope_matches("/api", "/api/users/123"), true)
-  assert_eq(path_scope_matches("/a/b", "/a/b/c"), true)
+  assert_eq(@httputil.path_scope_matches("/api", "/api/users"), true)
+  assert_eq(@httputil.path_scope_matches("/api", "/api/users/123"), true)
+  assert_eq(@httputil.path_scope_matches("/a/b", "/a/b/c"), true)
 }
 
 ///|
 test "path_scope_matches rejects non-segment-boundary prefix" {
   // "/api" must NOT match "/apis" -- no '/' after the prefix
-  assert_eq(path_scope_matches("/api", "/apis"), false)
-  assert_eq(path_scope_matches("/api", "/apiversion"), false)
-  assert_eq(path_scope_matches("/app", "/application"), false)
+  assert_eq(@httputil.path_scope_matches("/api", "/apis"), false)
+  assert_eq(@httputil.path_scope_matches("/api", "/apiversion"), false)
+  assert_eq(@httputil.path_scope_matches("/app", "/application"), false)
 }
 
 ///|
 test "path_scope_matches rejects completely different paths" {
-  assert_eq(path_scope_matches("/api", "/web"), false)
-  assert_eq(path_scope_matches("/api", "/"), false)
-  assert_eq(path_scope_matches("/a/b", "/a/c"), false)
+  assert_eq(@httputil.path_scope_matches("/api", "/web"), false)
+  assert_eq(@httputil.path_scope_matches("/api", "/"), false)
+  assert_eq(@httputil.path_scope_matches("/a/b", "/a/c"), false)
 }
