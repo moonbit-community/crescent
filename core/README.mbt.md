@@ -142,7 +142,7 @@ test "read body as JSON" {
 #warnings("-unnecessary_annotation")
 struct CoreDocUser {
   name : String
-  age : Int
+  age : Int32
 } derive(FromJson, Eq, Debug)
 
 ///|

@@ -124,12 +124,12 @@ async fn allocate_test_server() -> @http.Server {
 }
 
 ///|
-fn localhost_url(port : Int, path : String) -> String {
+fn localhost_url(port : Int32, path : String) -> String {
   "http://127.0.0.1:\{port}\{path}"
 }
 
 ///|
-async fn wait_until_ready(port : Int) -> Unit {
+async fn wait_until_ready(port : Int32) -> Unit {
   @async.retry(FixedDelay(20), max_retry=50, () => {
     let (response, _body) = @http.get(localhost_url(port, "/__cors_ready"))
     guard response.code == 200 else { raise ServerNotReady }
@@ -139,7 +139,7 @@ async fn wait_until_ready(port : Int) -> Unit {
 ///|
 async fn with_test_server(
   app : @crescent.App,
-  run_test : async (Int) -> Unit,
+  run_test : async (Int32) -> Unit,
 ) -> Unit {
   let server = allocate_test_server()
   let port = server.addr.port()
@@ -153,7 +153,7 @@ async fn with_test_server(
 
 ///|
 async fn issue_request(
-  port : Int,
+  port : Int32,
   meth : @http.RequestMethod,
   path : String,
   headers? : Map[@http.CaseInsensitiveString, String],
@@ -167,7 +167,7 @@ async fn issue_request(
 }
 
 ///|
-async fn issue_raw_request_headers(port : Int, request : String) -> String {
+async fn issue_raw_request_headers(port : Int32, request : String) -> String {
   let addr = @socket.Addr::parse("127.0.0.1:\{port}") catch {
     _ => fail("invalid raw request address")
   }

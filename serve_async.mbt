@@ -85,7 +85,7 @@ fn copy_async_headers(
 }
 
 ///|
-let ws_serve_runtime_counter : Ref[Int] = Ref(0)
+let ws_serve_runtime_counter : Ref[Int32] = Ref(0)
 
 ///|
 fn next_ws_serve_runtime_id(app : App) -> String {
@@ -549,7 +549,7 @@ pub async fn App::serve_on(
   self : App,
   server : @http.Server,
   shutdown? : @async.Queue[Unit],
-  options? : NativeServeOptions = NativeServeOptions(),
+  options~ : NativeServeOptions = NativeServeOptions(),
 ) -> Unit {
   let ws_runtime_id = next_ws_serve_runtime_id(self)
   defer @ws.cleanup_runtime(ws_runtime_id)
@@ -663,9 +663,9 @@ pub async fn App::serve_on(
 /// or is closed. See `serve_on` for shutdown semantics.
 pub async fn App::serve(
   self : App,
-  port~ : Int,
+  port~ : Int32,
   shutdown? : @async.Queue[Unit],
-  options? : NativeServeOptions = NativeServeOptions(),
+  options~ : NativeServeOptions = NativeServeOptions(),
 ) -> Unit {
   let addr = @socket.Addr::parse("0.0.0.0:\{port}")
   let server = @http.Server(addr, reuse_addr=true)

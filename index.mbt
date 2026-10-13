@@ -34,7 +34,7 @@ pub struct App {
 }
 
 ///|
-let app_instance_counter : Ref[Int] = Ref(0)
+let app_instance_counter : Ref[Int32] = Ref(0)
 
 ///|
 fn next_app_instance_id() -> String {
@@ -44,7 +44,7 @@ fn next_app_instance_id() -> String {
 
 ///|
 /// Creates a new App application instance with an optional base path prefix.
-pub fn App::App(base_path? : String = "") -> App {
+pub fn App::App(base_path~ : String = "") -> App {
   {
     base_path,
     route_keys: [],
@@ -212,7 +212,7 @@ pub fn App::group(
 /// then the framework default. Used by both live serving and synthetic
 /// dispatch so the two stay aligned.
 fn App::resolve_not_found_handler(self : App, path : String) -> HttpHandler {
-  let mut best : (Int, HttpHandler)? = None
+  let mut best : (Int32, HttpHandler)? = None
   for entry in self.scoped_not_found_handlers {
     let (prefix, handler) = entry
     if @httputil.path_scope_matches(prefix, path) {

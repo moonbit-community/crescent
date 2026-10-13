@@ -14,6 +14,6 @@ pub fn make_app() -> @crescent.App {
 
 ///|
 /// Serves the demo application on the given port.
-pub async fn run(port~ : Int) -> Unit {
+pub async fn run(port~ : Int32) -> Unit {
   make_app().serve(port~)
 }

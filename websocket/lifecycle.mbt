@@ -28,7 +28,7 @@ async fn write_native_ws_outgoing(
 ///|
 async fn recv_native_ws_message(
   ws : @async_websocket.Conn,
-  read_timeout_ms : Int?,
+  read_timeout_ms : Int32?,
 ) -> @async_websocket.Message? {
   match read_timeout_ms {
     Some(read_timeout_ms) =>
@@ -71,7 +71,7 @@ fn decode_native_ws_message(
 }
 
 ///|
-fn next_native_ws_message_chunk_size(limit : Int, total : Int) -> Int {
+fn next_native_ws_message_chunk_size(limit : Int32, total : Int32) -> Int32 {
   let remaining = limit - total
   if remaining >= 1024 {
     1024
@@ -82,9 +82,9 @@ fn next_native_ws_message_chunk_size(limit : Int, total : Int) -> Int {
 
 ///|
 fn native_ws_chunk_exceeds_limit(
-  limit : Int,
-  total : Int,
-  chunk_length : Int,
+  limit : Int32,
+  total : Int32,
+  chunk_length : Int32,
 ) -> Bool {
   chunk_length > limit - total
 }
@@ -93,7 +93,7 @@ fn native_ws_chunk_exceeds_limit(
 async fn read_native_ws_message_contents(
   ws : @async_websocket.Conn,
   message : @async_websocket.Message,
-  max_message_bytes : Int?,
+  max_message_bytes : Int32?,
 ) -> WebSocketAggregatedMessage? {
   match max_message_bytes {
     None =>
@@ -223,10 +223,10 @@ pub async fn handle_route_async(
   conn : @http.ServerConnection,
   handler : WebSocketHandler,
   params : Map[String, String],
-  max_message_bytes : Int?,
-  outgoing_queue_capacity : Int,
+  max_message_bytes : Int32?,
+  outgoing_queue_capacity : Int32,
   overflow_policy : NativeWebSocketOverflowPolicy,
-  read_timeout_ms : Int?,
+  read_timeout_ms : Int32?,
 ) -> Unit {
   // -------------------------------------------------------------------------
   // Phase 1: Handshake

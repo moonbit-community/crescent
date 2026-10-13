@@ -7,7 +7,7 @@ priv enum FetchProtocol {
 }
 
 ///|
-fn FetchProtocol::default_port(self : FetchProtocol) -> Int {
+fn FetchProtocol::default_port(self : FetchProtocol) -> Int32 {
   match self {
     Http => 80
     Https => 443
@@ -45,7 +45,7 @@ fn request_method_to_async(
 ///|
 fn resolve_fetch_url(
   url : String,
-) -> (FetchProtocol, String, Int, String) raise {
+) -> (FetchProtocol, String, Int32, String) raise {
   // Parse the URL using the proper RFC 3986 parser from the uri package.
   let parsed = @uri.Uri(url) catch {
     _ => raise FetchError::RequestFailed("invalid URL: \{url}")
@@ -212,7 +212,11 @@ test "resolve_fetch_url rejects ftp" {
 }
 
 ///|
-fn fetch_origin(protocol : FetchProtocol, host : String, port : Int) -> String {
+fn fetch_origin(
+  protocol : FetchProtocol,
+  host : String,
+  port : Int32,
+) -> String {
   if port == protocol.default_port() {
     "\{protocol.scheme()}://\{host}"
   } else {

@@ -120,12 +120,12 @@ fn parse_scheme(source : StringView, uri : Uri) -> StringView raise ParseError {
 fn parse_percent_encoding(source : StringView) -> StringView raise ParseError {
   match source {
     [
-      '0'..='9'
-      | 'A'..='F'
-      | 'a'..='f',
-      '0'..='9'
-      | 'A'..='F'
-      | 'a'..='f',
+      '0'..<='9'
+      | 'A'..<='F'
+      | 'a'..<='f',
+      '0'..<='9'
+      | 'A'..<='F'
+      | 'a'..<='f',
       .. source,
     ] => source
     [..] => raise InvalidPercentEncoding(source)

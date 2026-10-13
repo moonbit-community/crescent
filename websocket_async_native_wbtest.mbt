@@ -19,12 +19,12 @@ async fn allocate_websocket_lifecycle_server() -> @http.Server {
 }
 
 ///|
-fn websocket_lifecycle_url(port : Int, path : String) -> String {
+fn websocket_lifecycle_url(port : Int32, path : String) -> String {
   "http://127.0.0.1:\{port}\{path}"
 }
 
 ///|
-async fn wait_until_websocket_lifecycle_ready(port : Int) -> Unit {
+async fn wait_until_websocket_lifecycle_ready(port : Int32) -> Unit {
   @async.retry(FixedDelay(20), max_retry=50, () => {
     let (response, _body) = @http.get(
       websocket_lifecycle_url(port, "/__ws_lifecycle_ready"),
@@ -40,17 +40,17 @@ async fn wait_until_websocket_lifecycle_ready(port : Int) -> Unit {
 // state.
 
 ///|
-fn native_ws_hub_count() -> Int {
+fn native_ws_hub_count() -> Int32 {
   @ws.registered_runtime_count()
 }
 
 ///|
-fn native_ws_connection_hub_count() -> Int {
+fn native_ws_connection_hub_count() -> Int32 {
   @ws.registered_connection_count()
 }
 
 ///|
-fn native_ws_channel_member_count(channel : String) -> Int {
+fn native_ws_channel_member_count(channel : String) -> Int32 {
   @ws.channel_member_count(channel)
 }
 
@@ -63,7 +63,7 @@ fn native_ws_runtime_ids_for_app(app : App) -> Array[String] {
 fn native_ws_channel_member_count_in_runtime(
   runtime_id : String,
   channel : String,
-) -> Int {
+) -> Int32 {
   @ws.channel_member_count_in_runtime(runtime_id, channel)
 }
 
@@ -356,7 +356,7 @@ async test "serve_on cleans up channel membership after client close" {
   // observable: after a client closes, the server-side hub state is
   // cleaned up and the remaining client still works.
   let close_connection_id : Ref[String?] = Ref(None)
-  let close_channel_members : Ref[Int?] = Ref(None)
+  let close_channel_members : Ref[Int32?] = Ref(None)
   @async.with_task_group(group => {
     let server = allocate_websocket_lifecycle_server()
     let port = server.addr.port()
@@ -441,8 +441,8 @@ async test "serve_on cleans up channel membership after client close" {
 ///|
 async test "serve_on cleans up subscriptions added during close handler" {
   let close_connection_id : Ref[String?] = Ref(None)
-  let close_primary_members : Ref[Int?] = Ref(None)
-  let close_late_members : Ref[Int?] = Ref(None)
+  let close_primary_members : Ref[Int32?] = Ref(None)
+  let close_late_members : Ref[Int32?] = Ref(None)
   @async.with_task_group(group => {
     let server = allocate_websocket_lifecycle_server()
     let port = server.addr.port()
@@ -518,8 +518,8 @@ async test "serve_on cleans up subscriptions added during close handler" {
 ///|
 async test "serve_on handles unsubscribe then subscribe mutations during close handler" {
   let close_connection_id : Ref[String?] = Ref(None)
-  let close_primary_members : Ref[Int?] = Ref(None)
-  let close_late_members : Ref[Int?] = Ref(None)
+  let close_primary_members : Ref[Int32?] = Ref(None)
+  let close_late_members : Ref[Int32?] = Ref(None)
   @async.with_task_group(group => {
     let server = allocate_websocket_lifecycle_server()
     let port = server.addr.port()
@@ -596,9 +596,9 @@ async test "serve_on handles unsubscribe then subscribe mutations during close h
 ///|
 async test "serve_on keeps close-handler mutations isolated across reused app runtimes" {
   let close_runtime_id : Ref[String?] = Ref(None)
-  let close_room_members : Ref[Int?] = Ref(None)
-  let close_late_members : Ref[Int?] = Ref(None)
-  let close_late_runtime_count : Ref[Int?] = Ref(None)
+  let close_room_members : Ref[Int32?] = Ref(None)
+  let close_late_members : Ref[Int32?] = Ref(None)
+  let close_late_runtime_count : Ref[Int32?] = Ref(None)
   let app = App()
   app.get("/__ws_lifecycle_ready", _ => "ready")
   app.ws("/hub", event => {

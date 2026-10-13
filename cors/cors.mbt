@@ -46,11 +46,11 @@ fn resolve_allow_origin(
 /// instead (browsers reject `*` with credentials) and `Vary: Origin` is set.
 pub fn append_cors_preflight_headers(
   event : @crescent.Event,
-  origin? : String = "*",
-  methods? : String = "*",
-  allow_headers? : String = "*",
-  credentials? : Bool = false,
-  max_age? : Int = 86400,
+  origin~ : String = "*",
+  methods~ : String = "*",
+  allow_headers~ : String = "*",
+  credentials~ : Bool = false,
+  max_age~ : Int32 = 86400,
 ) -> Unit noraise {
   let headers = event.res.headers
   headers["Access-Control-Allow-Origin"] = resolve_allow_origin(
@@ -71,11 +71,11 @@ pub fn append_cors_preflight_headers(
 /// to the event's response for non-preflight requests.
 pub fn append_cors_headers(
   event : @crescent.Event,
-  origin? : String = "*",
-  methods? : String = "*",
-  allow_headers? : String = "*",
-  expose_headers? : String = "*",
-  credentials? : Bool = false,
+  origin~ : String = "*",
+  methods~ : String = "*",
+  allow_headers~ : String = "*",
+  expose_headers~ : String = "*",
+  credentials~ : Bool = false,
 ) -> Unit noraise {
   let headers = event.res.headers
   headers["Access-Control-Allow-Origin"] = resolve_allow_origin(
@@ -94,12 +94,12 @@ pub fn append_cors_headers(
 /// Preflight requests receive an empty 200 response with appropriate headers;
 /// regular requests have CORS headers appended before continuing the middleware chain.
 pub fn handle_cors(
-  origin? : String = "*",
-  methods? : String = "*",
-  allow_headers? : String = "*",
-  expose_headers? : String = "*",
-  credentials? : Bool = false,
-  max_age? : Int = 86400,
+  origin~ : String = "*",
+  methods~ : String = "*",
+  allow_headers~ : String = "*",
+  expose_headers~ : String = "*",
+  credentials~ : Bool = false,
+  max_age~ : Int32 = 86400,
 ) -> @crescent.Middleware {
   (event, next) => {
     if is_preflight_request(event) {

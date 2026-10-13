@@ -46,7 +46,7 @@ compile to native (backend) and JS (frontend) — no code generation needed.
 ```moonbit nocheck
 ///|
 struct Todo {
-  id : Int
+  id : Int32
   title : String
   done : Bool
 } derive(ToJson, FromJson)
@@ -62,7 +62,7 @@ struct CreateTodo {
 #warnings("-unnecessary_annotation")
 struct JsonDemoUser {
   name : String
-  age : Int
+  age : Int32
 } derive(ToJson, FromJson, Eq)
 
 ///|
@@ -333,7 +333,7 @@ This registers `GET /api/todos`, `GET /api/todos/:id`, `POST /api/todos`,
 ///|
 #warnings("-unnecessary_annotation")
 struct ResItem {
-  id : Int
+  id : Int32
   name : String
 } derive(ToJson, FromJson, Eq, Debug)
 
@@ -801,7 +801,7 @@ test "require_param raises on missing" {
 #warnings("-unnecessary_annotation")
 struct ReadmeCreateUser {
   name : String
-  age : Int
+  age : Int32
 } derive(FromJson)
 
 ///|

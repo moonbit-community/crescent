@@ -235,7 +235,7 @@ async fn send_response_async(
   // start of a tunnel and refuses to frame a body for it. Keep Crescent's
   // existing behavior (status, headers and body, then close) by writing the
   // response in pass-through mode.
-  if request.meth == Connect && response.status_code.to_int() is (200..=299) {
+  if request.meth == Connect && response.status_code.to_int() is (200..<=299) {
     send_raw_response_async(conn, response, headers, true)
     return
   }

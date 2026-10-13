@@ -78,7 +78,7 @@ async fn resolve_within_root(
 ///|
 fn static_asset_etag(
   mtime_sec : Int64,
-  mtime_nsec : Int,
+  mtime_nsec : Int32,
   size : Int64,
 ) -> String {
   "\"\{mtime_sec}-\{mtime_nsec}-\{size}\""
