@@ -7,7 +7,7 @@ priv enum FetchProtocol {
 }
 
 ///|
-fn FetchProtocol::default_port(self : FetchProtocol) -> Int {
+fn FetchProtocol::default_port(self : FetchProtocol) -> Int32 {
   match self {
     Http => 80
     Https => 443
@@ -45,7 +45,7 @@ fn request_method_to_async(
 ///|
 fn resolve_fetch_url(
   url : String,
-) -> (FetchProtocol, String, Int, String) raise {
+) -> (FetchProtocol, String, Int32, String) raise {
   // Parse the URL using the proper RFC 3986 parser from the uri package.
   let parsed = @uri.Uri(url) catch {
     _ => raise FetchError::RequestFailed("invalid URL: \{url}")
@@ -212,12 +212,39 @@ test "resolve_fetch_url rejects ftp" {
 }
 
 ///|
-fn fetch_origin(protocol : FetchProtocol, host : String, port : Int) -> String {
+fn fetch_origin(
+  protocol : FetchProtocol,
+  host : String,
+  port : Int32,
+) -> String {
   if port == protocol.default_port() {
     "\{protocol.scheme()}://\{host}"
   } else {
     "\{protocol.scheme()}://\{host}:\{port}"
   }
+}
+
+///|
+/// Converts plain headers into the case-insensitive map used by
+/// `moonbitlang/async/http`, keeping the original key spelling.
+fn to_async_http_headers(
+  headers : Map[String, String],
+) -> Map[@http.CaseInsensitiveString, String] {
+  let out : Map[@http.CaseInsensitiveString, String] = Map([])
+  headers.each((key, value) => out.set(key, value))
+  out
+}
+
+///|
+/// Converts `moonbitlang/async/http` headers back into a plain map. Header
+/// names are lower-cased, matching what callers observed before
+/// `moonbitlang/async` switched to case-insensitive, case-preserving keys.
+fn from_async_http_headers(
+  headers : Map[@http.CaseInsensitiveString, String],
+) -> Map[String, String] {
+  let out : Map[String, String] = Map([])
+  headers.each((key, value) => out.set(key.0.to_lower(), value))
+  out
 }
 
 ///|
@@ -277,7 +304,7 @@ pub async fn fetch(
     client.request(
       request_method_to_async(http_method),
       path,
-      extra_headers=req_headers,
+      extra_headers=to_async_http_headers(req_headers),
     )
     match req_body {
       Some(body_bytes) => client.write(body_bytes)
@@ -292,7 +319,7 @@ pub async fn fetch(
     }
   HttpResponse(
     status_code=@core.StatusCode::from_int(response.code),
-    headers=@httputil.copy_headers(response.headers),
+    headers=from_async_http_headers(response.headers),
     raw_body=response_body,
   )
 }

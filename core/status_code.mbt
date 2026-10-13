@@ -126,7 +126,7 @@ pub(all) enum StatusCode {
   NotExtended
   /// RFC 6585, 6
   NetworkAuthenticationRequired
-  Custom(Int)
+  Custom(Int32)
 } derive(Debug, ToJson, Eq)
 
 ///|
@@ -220,7 +220,7 @@ pub impl Show for StatusCode with fn output(self, logger) {
 
 ///|
 /// Converts an integer HTTP status code to a `StatusCode` enum value.
-pub fn StatusCode::from_int(i : Int) -> StatusCode {
+pub fn StatusCode::from_int(i : Int32) -> StatusCode {
   match i {
     100 => Continue
     101 => SwitchingProtocols
@@ -290,7 +290,7 @@ pub fn StatusCode::from_int(i : Int) -> StatusCode {
 
 ///|
 /// Returns the integer value of this HTTP status code.
-pub fn StatusCode::to_int(self : StatusCode) -> Int {
+pub fn StatusCode::to_int(self : StatusCode) -> Int32 {
   match self {
     Continue => 100
     SwitchingProtocols => 101

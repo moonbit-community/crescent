@@ -1,7 +1,7 @@
 ///|
 #warnings("-unnecessary_annotation")
 struct ResourceItem {
-  id : Int
+  id : Int32
   name : String
 } derive(ToJson, FromJson, Eq, Debug)
 

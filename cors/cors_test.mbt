@@ -124,12 +124,12 @@ async fn allocate_test_server() -> @http.Server {
 }
 
 ///|
-fn localhost_url(port : Int, path : String) -> String {
+fn localhost_url(port : Int32, path : String) -> String {
   "http://127.0.0.1:\{port}\{path}"
 }
 
 ///|
-async fn wait_until_ready(port : Int) -> Unit {
+async fn wait_until_ready(port : Int32) -> Unit {
   @async.retry(FixedDelay(20), max_retry=50, () => {
     let (response, _body) = @http.get(localhost_url(port, "/__cors_ready"))
     guard response.code == 200 else { raise ServerNotReady }
@@ -139,7 +139,7 @@ async fn wait_until_ready(port : Int) -> Unit {
 ///|
 async fn with_test_server(
   app : @crescent.App,
-  run_test : async (Int) -> Unit,
+  run_test : async (Int32) -> Unit,
 ) -> Unit {
   let server = allocate_test_server()
   let port = server.addr.port()
@@ -153,10 +153,10 @@ async fn with_test_server(
 
 ///|
 async fn issue_request(
-  port : Int,
+  port : Int32,
   meth : @http.RequestMethod,
   path : String,
-  headers? : Map[String, String],
+  headers? : Map[@http.CaseInsensitiveString, String],
 ) -> (@http.Response, Bytes) {
   let client = @http.Client("http://127.0.0.1:\{port}")
   defer client.close()
@@ -167,7 +167,7 @@ async fn issue_request(
 }
 
 ///|
-async fn issue_raw_request_headers(port : Int, request : String) -> String {
+async fn issue_raw_request_headers(port : Int32, request : String) -> String {
   let addr = @socket.Addr::parse("127.0.0.1:\{port}") catch {
     _ => fail("invalid raw request address")
   }
@@ -201,7 +201,7 @@ async test "handle_cors serves preflight requests through async server" {
     })
     assert_eq(response.code, 200)
     assert_eq(body, b"")
-    guard response.headers
+    guard plain_headers(response.headers)
       is {
         "access-control-allow-origin": "https://frontend.example",
         "access-control-allow-methods": "GET, PATCH",
@@ -235,7 +235,7 @@ async test "handle_cors decorates normal requests through async server" {
     })
     assert_eq(response.code, 200)
     assert_eq(@utf8.decode(body) catch { _ => "" }, "ok")
-    guard response.headers
+    guard plain_headers(response.headers)
       is {
         "access-control-allow-origin": "https://frontend.example",
         "access-control-allow-methods": "GET, POST",
@@ -272,7 +272,7 @@ async test "handle_cors does not short-circuit non-preflight options" {
     })
     assert_eq(response.code, 200)
     assert_eq(@utf8.decode(body) catch { _ => "" }, "regular-options")
-    guard response.headers
+    guard plain_headers(response.headers)
       is {
         "access-control-allow-origin": "https://frontend.example",
         "access-control-allow-methods": "GET, OPTIONS",
@@ -325,4 +325,14 @@ async test "handle_cors accepts mixed-case preflight headers" {
     )
     assert_true(response_headers.contains("Access-Control-Max-Age: 7200"))
   })
+}
+
+///|
+/// Lower-cases header names so tests can pattern-match on a plain map.
+fn plain_headers(
+  headers : Map[@http.CaseInsensitiveString, String],
+) -> Map[String, String] {
+  let out : Map[String, String] = Map([])
+  headers.each((key, value) => out.set(key.0.to_lower(), value))
+  out
 }

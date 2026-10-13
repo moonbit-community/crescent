@@ -1,6 +1,6 @@
 ///|
 struct BenchUser {
-  id : Int
+  id : Int32
   name : String
 } derive(ToJson, FromJson)
 

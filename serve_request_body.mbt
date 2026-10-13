@@ -1,7 +1,6 @@
 ///|
-fn request_content_length(request : @http.Request) -> Int? {
-  match
-    @httputil.get_header_case_insensitive(request.headers, "content-length") {
+fn request_content_length(request : @http.Request) -> Int32? {
+  match request.headers.get("content-length") {
     Some(value) => Some(@string.parse_int(value) catch { _ => return None })
     None => None
   }
@@ -14,7 +13,7 @@ priv enum RequestBodyReadOutcome {
 }
 
 ///|
-fn next_native_request_body_chunk_size(limit : Int, total : Int) -> Int {
+fn next_native_request_body_chunk_size(limit : Int32, total : Int32) -> Int32 {
   let remaining = limit - total
   if remaining >= 1024 {
     1024
@@ -54,9 +53,9 @@ test "native request body limit helpers handle int max boundaries" {
 
 ///|
 fn native_request_body_chunk_exceeds_limit(
-  limit : Int,
-  total : Int,
-  chunk_length : Int,
+  limit : Int32,
+  total : Int32,
+  chunk_length : Int32,
 ) -> Bool {
   chunk_length > limit - total
 }
@@ -94,7 +93,7 @@ async fn read_request_body_async(
   request : @http.Request,
   body_reader : &@io.Reader,
   conn : @http.ServerConnection,
-  max_request_body_bytes : Int?,
+  max_request_body_bytes : Int32?,
 ) -> RequestBodyReadOutcome {
   match max_request_body_bytes {
     None => Body(body_reader.read_all().binary())
@@ -129,8 +128,8 @@ async fn read_request_body_with_policy_async(
   request : @http.Request,
   body_reader : &@io.Reader,
   conn : @http.ServerConnection,
-  max_request_body_bytes : Int?,
-  request_body_read_timeout_ms : Int?,
+  max_request_body_bytes : Int32?,
+  request_body_read_timeout_ms : Int32?,
 ) -> RequestBodyReadOutcome {
   match request_body_read_timeout_ms {
     Some(request_body_read_timeout_ms) =>

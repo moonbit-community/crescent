@@ -21,7 +21,7 @@ pub fn Event::param_decoded(self : Event, name : String) -> String? {
 
 ///|
 /// Returns a route parameter parsed as an Int, or None if not found or not a valid integer.
-pub fn Event::param_int(self : Event, name : String) -> Int? {
+pub fn Event::param_int(self : Event, name : String) -> Int32? {
   match self.params.get(name) {
     Some(v) =>
       try @string.parse_int(v) catch {
@@ -63,7 +63,7 @@ pub fn Event::require_param(self : Event, name : String) -> String raise {
 ///|
 /// Returns a route parameter parsed as an Int, or raises `HttpError(BadRequest)`
 /// if missing or not a valid integer.
-pub fn Event::require_param_int(self : Event, name : String) -> Int raise {
+pub fn Event::require_param_int(self : Event, name : String) -> Int32 raise {
   match self.params.get(name) {
     Some(v) =>
       @string.parse_int(v) catch {
