@@ -7,11 +7,11 @@
 /// - `requests_per_window` — maximum requests allowed per window.
 /// - `window_ms` — window duration in milliseconds.
 pub fn rate_limit(
-  requests_per_window~ : Int,
-  window_ms~ : Int,
+  requests_per_window~ : Int32,
+  window_ms~ : Int32,
 ) -> @crescent.Middleware {
   let window_start : Ref[Int64] = Ref(0L)
-  let request_count : Ref[Int] = Ref(0)
+  let request_count : Ref[Int32] = Ref(0)
   (_event, next) => {
     let now = @async.now()
     // Reset window if expired

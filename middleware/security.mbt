@@ -14,9 +14,9 @@
 /// Headers already set by a handler or inner middleware are preserved (not
 /// overwritten) so that per-route policies take precedence.
 pub fn security_headers(
-  hsts? : String = "",
-  csp? : String = "",
-  permissions_policy? : String = "",
+  hsts~ : String = "",
+  csp~ : String = "",
+  permissions_policy~ : String = "",
 ) -> @crescent.Middleware {
   (event, next) => {
     let res = next()

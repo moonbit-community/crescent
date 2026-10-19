@@ -112,7 +112,7 @@ pub fn HttpResponse::set_cookie(
   self : HttpResponse,
   name : String,
   value : String,
-  max_age? : Int,
+  max_age? : Int32,
   path? : String,
   domain? : String,
   secure? : Bool,

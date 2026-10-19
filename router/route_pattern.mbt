@@ -72,8 +72,8 @@ pub fn CompiledRoute::match_path(
 fn match_compiled_segments(
   segments : Array[RouteSegment],
   path_parts : Array[StringView],
-  seg_idx : Int,
-  path_idx : Int,
+  seg_idx : Int32,
+  path_idx : Int32,
   params : Map[String, StringView],
 ) -> Map[String, StringView]? {
   // Both exhausted: match succeeded
