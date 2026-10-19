@@ -1,14 +1,14 @@
 ///|
 /// Error type for invalid native server configuration values.
 pub suberror NativeServeError {
-  InvalidMaxConnections(Int)
-  InvalidMaxRequestBodyBytes(Int)
-  InvalidRequestBodyReadTimeoutMs(Int)
-  InvalidHandlerTimeoutMs(Int)
-  InvalidShutdownTimeoutMs(Int)
-  InvalidWebSocketMaxMessageBytes(Int)
-  InvalidWebSocketOutgoingQueueCapacity(Int)
-  InvalidWebSocketReadTimeoutMs(Int)
+  InvalidMaxConnections(Int32)
+  InvalidMaxRequestBodyBytes(Int32)
+  InvalidRequestBodyReadTimeoutMs(Int32)
+  InvalidHandlerTimeoutMs(Int32)
+  InvalidShutdownTimeoutMs(Int32)
+  InvalidWebSocketMaxMessageBytes(Int32)
+  InvalidWebSocketOutgoingQueueCapacity(Int32)
+  InvalidWebSocketReadTimeoutMs(Int32)
 } derive(Debug, ToJson)
 
 ///|
@@ -22,23 +22,23 @@ pub extend NativeServeError with ToJson::{to_json}
 /// The constructor validates all values eagerly and raises on invalid input.
 pub struct NativeServeOptions {
   /// Maximum concurrent TCP connections; `None` means unlimited.
-  max_connections : Int?
+  max_connections : Int32?
   /// Maximum request body size in bytes; exceeding yields `413 Request Entity Too Large`.
-  max_request_body_bytes : Int?
+  max_request_body_bytes : Int32?
   /// Timeout for reading the request body in milliseconds; exceeding yields `408 Request Timeout`.
-  request_body_read_timeout_ms : Int?
+  request_body_read_timeout_ms : Int32?
   /// Timeout for the handler + middleware pipeline in milliseconds; exceeding yields `504 Gateway Timeout`.
-  handler_timeout_ms : Int?
+  handler_timeout_ms : Int32?
   /// Graceful shutdown drain period in milliseconds; `None` means immediate cancellation.
-  shutdown_timeout_ms : Int?
+  shutdown_timeout_ms : Int32?
   /// Maximum buffered outbound WebSocket messages per connection (default: 256).
-  websocket_outgoing_queue_capacity : Int?
+  websocket_outgoing_queue_capacity : Int32?
   /// Policy when the outbound WebSocket queue is full (`DropOldest` or `DropLatest`).
   websocket_overflow_policy : @ws.NativeWebSocketOverflowPolicy?
   /// Timeout for the next inbound WebSocket message in milliseconds; exceeding closes the connection.
-  websocket_read_timeout_ms : Int?
+  websocket_read_timeout_ms : Int32?
   /// Maximum inbound WebSocket message size in bytes; exceeding closes with `1009 Message Too Big`.
-  websocket_max_message_bytes : Int?
+  websocket_max_message_bytes : Int32?
 }
 
 ///|
@@ -47,15 +47,15 @@ pub struct NativeServeOptions {
 /// from the `?` markers) and is individually range-checked; raises if
 /// any value is out of range.
 pub fn NativeServeOptions::NativeServeOptions(
-  max_connections? : Int,
-  max_request_body_bytes? : Int,
-  request_body_read_timeout_ms? : Int,
-  handler_timeout_ms? : Int,
-  shutdown_timeout_ms? : Int,
-  websocket_outgoing_queue_capacity? : Int,
+  max_connections? : Int32,
+  max_request_body_bytes? : Int32,
+  request_body_read_timeout_ms? : Int32,
+  handler_timeout_ms? : Int32,
+  shutdown_timeout_ms? : Int32,
+  websocket_outgoing_queue_capacity? : Int32,
   websocket_overflow_policy? : @ws.NativeWebSocketOverflowPolicy,
-  websocket_read_timeout_ms? : Int,
-  websocket_max_message_bytes? : Int,
+  websocket_read_timeout_ms? : Int32,
+  websocket_max_message_bytes? : Int32,
 ) -> NativeServeOptions raise {
   if max_connections is Some(v) {
     guard v > 0 else { raise NativeServeError::InvalidMaxConnections(v) }

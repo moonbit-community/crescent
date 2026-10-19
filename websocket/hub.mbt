@@ -11,7 +11,7 @@ priv struct NativeWebSocketConnection {
 
 ///|
 priv struct NativeWebSocketHub {
-  connection_counter : Ref[Int]
+  connection_counter : Ref[Int32]
   connections : Map[String, NativeWebSocketConnection]
   channels : Map[String, Map[String, Unit]]
 }
@@ -31,7 +31,7 @@ let native_ws_connection_hubs : Map[String, String] = Map([])
 ///|
 /// Default per-connection capacity for the outbound WebSocket message queue,
 /// used when `NativeServeOptions::websocket_outgoing_queue_capacity` is None.
-pub const DEFAULT_OUTGOING_QUEUE_CAPACITY : Int = 256
+pub const DEFAULT_OUTGOING_QUEUE_CAPACITY : Int32 = 256
 
 ///|
 fn ensure_native_ws_hub(runtime_id : String) -> NativeWebSocketHub {
@@ -268,7 +268,7 @@ pub fn registered_runtime_ids() -> Array[String] {
 
 ///|
 /// Returns the number of currently registered WebSocket runtimes.
-pub fn registered_runtime_count() -> Int {
+pub fn registered_runtime_count() -> Int32 {
   let mut count = 0
   native_ws_hubs.each((_, _) => count += 1)
   count
@@ -282,7 +282,7 @@ pub fn runtime_is_registered(runtime_id : String) -> Bool {
 
 ///|
 /// Returns the number of registered WebSocket connections across all runtimes.
-pub fn registered_connection_count() -> Int {
+pub fn registered_connection_count() -> Int32 {
   let mut count = 0
   native_ws_connection_hubs.each((_, _) => count += 1)
   count
@@ -303,7 +303,7 @@ pub fn runtime_id_for_connection(connection_id : String) -> String? {
 
 ///|
 /// Returns the number of subscribers to the given channel across all runtimes.
-pub fn channel_member_count(channel : String) -> Int {
+pub fn channel_member_count(channel : String) -> Int32 {
   let mut count = 0
   native_ws_hubs.each((_runtime_id, hub) => {
     match hub.channels.get(channel) {
@@ -320,7 +320,7 @@ pub fn channel_member_count(channel : String) -> Int {
 pub fn channel_member_count_in_runtime(
   runtime_id : String,
   channel : String,
-) -> Int {
+) -> Int32 {
   match native_ws_hubs.get(runtime_id) {
     Some(hub) =>
       match hub.channels.get(channel) {

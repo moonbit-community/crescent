@@ -105,7 +105,7 @@ async fn execute_middlewares(
 // Recursively execute middleware chain
 async fn execute_middleware_chain(
   middlewares : Array[Middleware],
-  index : Int,
+  index : Int32,
   event : Event,
   final_handler : HttpHandler,
 ) -> &Responder noraise {

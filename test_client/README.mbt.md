@@ -160,7 +160,7 @@ raising, so test assertions stay simple.
 #warnings("-unnecessary_annotation")
 struct Echo {
   name : String
-  count : Int
+  count : Int32
 } derive(FromJson, ToJson)
 
 ///|

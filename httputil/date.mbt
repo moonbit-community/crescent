@@ -2,7 +2,7 @@
 const HTTP_SECONDS_PER_DAY : Int64 = 86_400L
 
 ///|
-fn zero_pad_2(value : Int) -> String {
+fn zero_pad_2(value : Int32) -> String {
   if value < 10 {
     "0" + value.to_string()
   } else {
@@ -35,7 +35,7 @@ fn positive_mod_i64(lhs : Int64, rhs : Int64) -> Int64 {
 /// date as a `(year, month, day)` tuple.
 
 ///|
-fn civil_from_days(days_since_epoch : Int64) -> (Int, Int, Int) {
+fn civil_from_days(days_since_epoch : Int64) -> (Int32, Int32, Int32) {
   let z = days_since_epoch + 719_468L
   let era = if z >= 0L { z / 146_097L } else { (z - 146_096L) / 146_097L }
   let doe = z - era * 146_097L
@@ -55,7 +55,7 @@ fn civil_from_days(days_since_epoch : Int64) -> (Int, Int, Int) {
 /// since the Unix epoch (1970-01-01).
 
 ///|
-fn days_from_civil(year : Int, month : Int, day : Int) -> Int64 {
+fn days_from_civil(year : Int32, month : Int32, day : Int32) -> Int64 {
   let year_offset = if month <= 2 { 1 } else { 0 }
   let adjusted_year = year - year_offset
   let era = if adjusted_year >= 0 {
@@ -78,7 +78,7 @@ fn days_from_civil(year : Int, month : Int, day : Int) -> Int64 {
 /// calendar.
 
 ///|
-fn is_leap_year(year : Int) -> Bool {
+fn is_leap_year(year : Int32) -> Bool {
   year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
 }
 
@@ -86,7 +86,7 @@ fn is_leap_year(year : Int) -> Bool {
 /// for leap years in February.
 
 ///|
-fn days_in_month(year : Int, month : Int) -> Int {
+fn days_in_month(year : Int32, month : Int32) -> Int32 {
   match month {
     1 => 31
     2 => if is_leap_year(year) { 29 } else { 28 }
@@ -105,7 +105,7 @@ fn days_in_month(year : Int, month : Int) -> Int {
 }
 
 ///|
-fn http_month_number(month : StringView) -> Int? {
+fn http_month_number(month : StringView) -> Int32? {
   match month {
     "Jan" => Some(1)
     "Feb" => Some(2)
@@ -127,7 +127,7 @@ fn http_month_number(month : StringView) -> Int? {
 /// `None` if the text is not a valid integer.
 
 ///|
-fn parse_http_date_part(text : StringView) -> Int? {
+fn parse_http_date_part(text : StringView) -> Int32? {
   try @string.parse_int(text) catch {
     _ => None
   } noraise {
@@ -149,7 +149,7 @@ fn http_weekday_name(days_since_epoch : Int64) -> String {
 }
 
 ///|
-fn http_month_name(month : Int) -> String {
+fn http_month_name(month : Int32) -> String {
   match month {
     1 => "Jan"
     2 => "Feb"

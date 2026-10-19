@@ -44,7 +44,7 @@ pub(all) struct CookieItem {
   /// Cookie value.
   value : String
   /// Expiry in seconds from now; `0` deletes the cookie.
-  max_age : Int?
+  max_age : Int32?
   /// URL path scope for which the browser sends this cookie.
   path : String?
   /// Domain scope for which the browser sends this cookie.
@@ -71,7 +71,7 @@ pub extend CookieItem with Show::{to_string, output}
 pub fn CookieItem::CookieItem(
   name~ : String,
   value~ : String,
-  max_age? : Int,
+  max_age? : Int32,
   path? : String,
   domain? : String,
   secure? : Bool,

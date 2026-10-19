@@ -12,7 +12,7 @@
 ///|
 #warnings("-unnecessary_annotation")
 struct Todo {
-  id : Int
+  id : Int32
   title : String
   done : Bool
 } derive(ToJson, FromJson, Eq, Debug)
@@ -26,7 +26,7 @@ struct CreateTodo {
 ///|
 #warnings("-unnecessary_annotation")
 struct UserProfile {
-  id : Int
+  id : Int32
   name : String
   email : String
   tags : Array[String]
@@ -41,7 +41,7 @@ struct ApiErrorWrapper {
 ///|
 #warnings("-unnecessary_annotation")
 struct ApiErrorDetail {
-  status : Int
+  status : Int32
   message : String
 } derive(FromJson)
 

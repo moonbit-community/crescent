@@ -4,7 +4,7 @@ using @crescent {type HttpResponse}
 ///|
 struct Person {
   name : String
-  age : Int
+  age : Int32
 } derive(ToJson, FromJson)
 
 ///|

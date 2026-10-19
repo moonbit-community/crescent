@@ -2,7 +2,7 @@
 #warnings("-unnecessary_annotation")
 struct TestUser {
   name : String
-  age : Int
+  age : Int32
 } derive(FromJson, ToJson, Eq, Debug)
 
 ///|

@@ -118,12 +118,12 @@ impl ServeStaticProvider for EncodedStaticProvider with fn get_fallthrough(_) ->
 }
 
 ///|
-fn localhost_url(port : Int, path : String) -> String {
+fn localhost_url(port : Int32, path : String) -> String {
   "http://127.0.0.1:\{port}\{path}"
 }
 
 ///|
-async fn wait_until_ready(port : Int) -> Unit {
+async fn wait_until_ready(port : Int32) -> Unit {
   @async.retry(FixedDelay(20), max_retry=50, () => {
     let (response, _body) = @http.get(localhost_url(port, "/__app_ready"))
     guard response.code == 200 else { raise ServerNotReady }
@@ -133,7 +133,7 @@ async fn wait_until_ready(port : Int) -> Unit {
 ///|
 async fn with_test_server(
   app : @crescent.App,
-  run_test : async (Int) -> Unit,
+  run_test : async (Int32) -> Unit,
 ) -> Unit {
   let server = allocate_test_server()
   let port = server.addr.port()
@@ -149,7 +149,7 @@ async fn with_test_server(
 async fn with_test_server_options(
   app : @crescent.App,
   options~ : @crescent.NativeServeOptions,
-  run_test : async (Int) -> Unit,
+  run_test : async (Int32) -> Unit,
 ) -> Unit {
   let server = allocate_test_server()
   let port = server.addr.port()
@@ -164,7 +164,7 @@ async fn with_test_server_options(
 ///|
 async fn with_port_bound_test_server(
   app : @crescent.App,
-  run_test : async (Int) -> Unit,
+  run_test : async (Int32) -> Unit,
 ) -> Unit {
   app.get("/__app_ready", _ => "ready")
   let start_offset = @async.now().to_int() % 20_000
@@ -207,7 +207,7 @@ async fn with_port_bound_test_server(
 async fn with_two_test_servers(
   app1 : @crescent.App,
   app2 : @crescent.App,
-  run_test : async (Int, Int) -> Unit,
+  run_test : async (Int32, Int32) -> Unit,
 ) -> Unit {
   let server1 = allocate_test_server()
   let server2 = allocate_test_server()
@@ -226,7 +226,7 @@ async fn with_two_test_servers(
 
 ///|
 async fn issue_request(
-  port : Int,
+  port : Int32,
   meth : @http.RequestMethod,
   path : String,
   body? : Bytes,
@@ -245,7 +245,7 @@ async fn issue_request(
 }
 
 ///|
-async fn issue_raw_request_headers(port : Int, request : String) -> String {
+async fn issue_raw_request_headers(port : Int32, request : String) -> String {
   let addr = @socket.Addr::parse("127.0.0.1:\{port}") catch {
     _ => fail("invalid raw request address")
   }
@@ -257,7 +257,7 @@ async fn issue_raw_request_headers(port : Int, request : String) -> String {
 
 ///|
 async fn issue_raw_request_response(
-  port : Int,
+  port : Int32,
   request : String,
 ) -> (String, String) {
   let addr = @socket.Addr::parse("127.0.0.1:\{port}") catch {
@@ -296,7 +296,7 @@ async fn read_raw_http_response(client : @socket.Tcp) -> (String, String) {
 }
 
 ///|
-fn repeated_ascii_text(piece : String, count : Int) -> String {
+fn repeated_ascii_text(piece : String, count : Int32) -> String {
   let buffer = Buffer()
   for _ in 0..<count {
     buffer.write_string_utf8(piece)
@@ -340,7 +340,7 @@ async fn read_chunked_http_body(client : @socket.Tcp) -> String {
 }
 
 ///|
-fn websocket_close_code_from_wire(code : UInt) -> @websocket.CloseCode {
+fn websocket_close_code_from_wire(code : UInt32) -> @websocket.CloseCode {
   match code {
     1000 => Normal
     1001 => GoingAway
@@ -376,8 +376,8 @@ async fn read_raw_websocket_close_frame(
 ///|
 async fn read_raw_websocket_frame_opt(
   client : @http.Client,
-  timeout_ms : Int,
-) -> (Int, Bytes)? {
+  timeout_ms : Int32,
+) -> (Int32, Bytes)? {
   let header = match
     @async.with_timeout_opt(timeout_ms, () => client.read_exactly(2)) {
     Some(header) => header
@@ -401,7 +401,7 @@ async fn read_raw_websocket_frame_opt(
 }
 
 ///|
-async fn read_raw_websocket_frame(client : @http.Client) -> (Int, Bytes) {
+async fn read_raw_websocket_frame(client : @http.Client) -> (Int32, Bytes) {
   match read_raw_websocket_frame_opt(client, 200) {
     Some(frame) => frame
     None => fail("timed out waiting for websocket frame header")
@@ -410,7 +410,7 @@ async fn read_raw_websocket_frame(client : @http.Client) -> (Int, Bytes) {
 
 ///|
 async fn issue_raw_websocket_close(
-  port : Int,
+  port : Int32,
   path : String,
   frames : Array[Bytes],
 ) -> (@websocket.CloseCode, String?) {
@@ -469,7 +469,7 @@ fn raw_header_value(raw_headers : String, header_name : String) -> String? {
 }
 
 ///|
-fn raw_header_count(raw_headers : String, header_name : String) -> Int {
+fn raw_header_count(raw_headers : String, header_name : String) -> Int32 {
   let needle = header_name.to_lower()
   let mut count = 0
   for line in raw_headers.split("\r\n") {
@@ -572,10 +572,10 @@ async test "serve preserves middleware onion order" {
 
 ///|
 async test "serve keeps invalid websocket opcodes connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -652,10 +652,10 @@ async test "serve keeps invalid websocket opcodes connection-local and stays hea
 
 ///|
 async test "serve keeps invalid websocket text payloads connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -729,10 +729,10 @@ async test "serve keeps invalid websocket text payloads connection-local and sta
 
 ///|
 async test "serve keeps websocket protocol edge failures connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -831,10 +831,10 @@ async test "serve keeps websocket protocol edge failures connection-local and st
 
 ///|
 async test "serve keeps websocket sequencing and control-size failures connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -922,10 +922,10 @@ async test "serve keeps websocket sequencing and control-size failures connectio
 
 ///|
 async test "serve keeps websocket continuation and length-format failures connection-local and stays healthy" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1013,10 +1013,10 @@ async test "serve keeps websocket continuation and length-format failures connec
 
 ///|
 async test "serve echoes websocket close reasons and stays healthy" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1071,10 +1071,10 @@ async test "serve echoes websocket close reasons and stays healthy" {
 
 ///|
 async test "serve rejects invalid websocket close reasons and stays healthy" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1129,10 +1129,10 @@ async test "serve rejects invalid websocket close reasons and stays healthy" {
 
 ///|
 async test "serve auto-replies to websocket ping frames without leaking control messages" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1194,10 +1194,10 @@ async test "serve auto-replies to websocket ping frames without leaking control 
 
 ///|
 async test "serve ignores unsolicited websocket pong frames without leaking control messages" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1255,10 +1255,10 @@ async test "serve ignores unsolicited websocket pong frames without leaking cont
 
 ///|
 async test "serve routes fragmented websocket messages while replying to in-flight pings" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1338,10 +1338,10 @@ async test "serve routes fragmented websocket messages while replying to in-flig
 
 ///|
 async test "serve replies to multiple websocket pings in order without leaking control messages" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
-  let messages : Ref[Int] = Ref(0)
-  let healthy_hits : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
+  let messages : Ref[Int32] = Ref(0)
+  let healthy_hits : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.ws("/ws", event => {
     match event {
@@ -1433,7 +1433,7 @@ async test "serve replies to multiple websocket pings in order without leaking c
 async test "serve_on enforces max_connections" {
   let app = @crescent.App()
   let gate = @async.Queue(kind=Unbounded)
-  let started : Ref[Int] = Ref(0)
+  let started : Ref[Int32] = Ref(0)
   app.get("/serial", _ => {
     started.val += 1
     ignore(gate.get())
@@ -1522,7 +1522,7 @@ async test "serve rejects non-positive max_connections" {
 ///|
 async test "serve_on enforces max_request_body_bytes for fixed-length bodies" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref(0)
+  let handled : Ref[Int32] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body
@@ -1573,7 +1573,7 @@ async test "serve_on enforces max_request_body_bytes for fixed-length bodies" {
 ///|
 async test "serve_on treats max_request_body_bytes=0 as empty-body only" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref(0)
+  let handled : Ref[Int32] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body.length().to_string()
@@ -1645,7 +1645,7 @@ async test "serve_on treats max_request_body_bytes=0 as empty-body only" {
 ///|
 async test "serve_on enforces max_request_body_bytes for chunked bodies" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref(0)
+  let handled : Ref[Int32] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body
@@ -1690,7 +1690,7 @@ async test "serve_on enforces max_request_body_bytes for chunked bodies" {
 ///|
 async test "serve_on accepts exact-limit chunked bodies across multiple reads" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref(0)
+  let handled : Ref[Int32] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body.length().to_string()
@@ -2090,7 +2090,7 @@ async test "serve_until rejects negative websocket_max_message_bytes" {
 ///|
 async test "serve_on times out slow request bodies" {
   let app = @crescent.App()
-  let handled : Ref[Int] = Ref(0)
+  let handled : Ref[Int32] = Ref(0)
   app.post("/body", event => {
     handled.val += 1
     event.req.raw_body
@@ -3353,7 +3353,7 @@ async test "serve enforces websocket_max_message_bytes across multiple reads" {
 
 ///|
 async test "serve rejects websocket upgrades for http-only routes" {
-  let handled : Ref[Int] = Ref(0)
+  let handled : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.get("/ws", _ => {
     handled.val += 1
@@ -3440,8 +3440,8 @@ async test "serve accepts padded websocket handshake headers on matched routes" 
 
 ///|
 async test "serve rejects invalid websocket handshakes on matched routes and stays healthy" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.get("/healthy", _ => "ok")
   app.ws("/ws", event => {
@@ -3484,8 +3484,8 @@ async test "serve rejects invalid websocket handshakes on matched routes and sta
 
 ///|
 async test "serve rejects unsupported websocket versions and non-get upgrades" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.get("/healthy", _ => "ok")
   app.ws("/ws", event => {
@@ -3536,8 +3536,8 @@ async test "serve rejects unsupported websocket versions and non-get upgrades" {
 
 ///|
 async test "serve closes the connection after rejected websocket upgrades" {
-  let opened : Ref[Int] = Ref(0)
-  let closed : Ref[Int] = Ref(0)
+  let opened : Ref[Int32] = Ref(0)
+  let closed : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.get("/healthy", _ => "ok")
   app.ws("/ws", event => {
@@ -3591,9 +3591,9 @@ async test "serve closes the connection after rejected websocket upgrades" {
 
 ///|
 async test "serve rejects malformed websocket-like requests on websocket routes without stealing plain http" {
-  let http_hits : Ref[Int] = Ref(0)
-  let ws_opened : Ref[Int] = Ref(0)
-  let ws_closed : Ref[Int] = Ref(0)
+  let http_hits : Ref[Int32] = Ref(0)
+  let ws_opened : Ref[Int32] = Ref(0)
+  let ws_closed : Ref[Int32] = Ref(0)
   let app = @crescent.App()
   app.get("/ws", _ => {
     http_hits.val += 1
@@ -4741,7 +4741,7 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
 
     fn classify_shutdown_signal_results(
       outcomes : Array[Result[String, Error]?],
-    ) -> Int raise {
+    ) -> Int32 raise {
       let mut stopped_index = -1
       for i = 0; i < outcomes.length(); i = i + 1 {
         match outcomes[i] {
@@ -4776,7 +4776,7 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
 
     fn expect_shutdown_close(
       outcome : Result[String, Error]?,
-      client_index : Int,
+      client_index : Int32,
       phase : String,
     ) -> Unit raise {
       match outcome {
@@ -4830,7 +4830,7 @@ async test "serve_on_until queue close broadcasts to remaining reused websocket 
     ]
     let stopped_index = classify_shutdown_signal_results(outcomes)
 
-    let surviving_indexes : Array[Int] = []
+    let surviving_indexes : Array[Int32] = []
     for i = 0; i < clients.length(); i = i + 1 {
       if i != stopped_index {
         surviving_indexes.push(i)

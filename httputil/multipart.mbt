@@ -13,8 +13,8 @@ pub(all) struct MultipartFormValue {
 fn find_boundary(
   bytes : BytesView,
   boundary : BytesView,
-  start_index : Int,
-) -> Int {
+  start_index : Int32,
+) -> Int32 {
   let len = bytes.length()
   let boundary_len = boundary.length()
   if start_index + boundary_len > len {

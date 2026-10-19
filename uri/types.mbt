@@ -21,7 +21,7 @@ pub struct Authority {
   /// Host component: either a domain name (`RegName`) or IPv6 address.
   mut host : Host
   /// Port number, if explicitly specified in the URI.
-  mut port : Int?
+  mut port : Int32?
 } derive(Eq, Debug)
 
 ///|
