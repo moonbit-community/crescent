@@ -7,21 +7,21 @@ import {
 }
 
 // Values
-pub const DEFAULT_OUTGOING_QUEUE_CAPACITY : Int = 256
+pub const DEFAULT_OUTGOING_QUEUE_CAPACITY : Int32 = 256
 
-pub fn channel_member_count(String) -> Int
+pub fn channel_member_count(String) -> Int32
 
-pub fn channel_member_count_in_runtime(String, String) -> Int
+pub fn channel_member_count_in_runtime(String, String) -> Int32
 
 pub fn cleanup_runtime(String) -> Unit
 
 pub fn connection_is_registered(String) -> Bool
 
-pub async fn handle_route_async(String, @http.Request, @http.ServerConnection, WebSocketHandler, Map[String, String], Int?, Int, NativeWebSocketOverflowPolicy, Int?) -> Unit
+pub async fn handle_route_async(String, @http.Request, @http.ServerConnection, WebSocketHandler, Map[String, String], Int32?, Int32, NativeWebSocketOverflowPolicy, Int32?) -> Unit
 
-pub fn registered_connection_count() -> Int
+pub fn registered_connection_count() -> Int32
 
-pub fn registered_runtime_count() -> Int
+pub fn registered_runtime_count() -> Int32
 
 pub fn registered_runtime_ids() -> Array[String]
 

@@ -8,9 +8,9 @@ import {
 // Values
 pub fn append_cors_headers(@crescent.Event, origin? : String, methods? : String, allow_headers? : String, expose_headers? : String, credentials? : Bool) -> Unit
 
-pub fn append_cors_preflight_headers(@crescent.Event, origin? : String, methods? : String, allow_headers? : String, credentials? : Bool, max_age? : Int) -> Unit
+pub fn append_cors_preflight_headers(@crescent.Event, origin? : String, methods? : String, allow_headers? : String, credentials? : Bool, max_age? : Int32) -> Unit
 
-pub fn handle_cors(origin? : String, methods? : String, allow_headers? : String, expose_headers? : String, credentials? : Bool, max_age? : Int) -> @crescent.Middleware
+pub fn handle_cors(origin? : String, methods? : String, allow_headers? : String, expose_headers? : String, credentials? : Bool, max_age? : Int32) -> @crescent.Middleware
 
 pub fn is_preflight_request(@crescent.Event) -> Bool
 

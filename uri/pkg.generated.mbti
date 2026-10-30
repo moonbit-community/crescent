@@ -23,7 +23,7 @@ pub suberror ParseError {
 pub struct Authority {
   mut userinfo : StringView?
   mut host : Host
-  mut port : Int?
+  mut port : Int32?
 } derive(Eq, @debug.Debug)
 pub fn Authority::equal(Self, Self) -> Bool
 pub fn Authority::not_equal(Self, Self) -> Bool

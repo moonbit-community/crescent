@@ -98,7 +98,7 @@ fn parse_disposition_value(directive : String, key : String) -> String? {
   // Quoted value
   if rest.length() >= 2 &&
     rest.has_prefix("\"") &&
-    rest.view().to_owned().has_suffix("\"") {
+    rest[:].to_owned().has_suffix("\"") {
     Some(rest[1:rest.length() - 1].to_owned())
   } else {
     Some(rest.to_owned())
@@ -128,7 +128,7 @@ fn split_header_line(line : String) -> (String, String)? {
 ///|
 fn split_semicolon_quoted(input : String) -> Array[String] {
   let result : Array[String] = []
-  let view = input.view()
+  let view = input[:]
   let len = view.length()
   let mut start = 0
   let mut in_quote = false
