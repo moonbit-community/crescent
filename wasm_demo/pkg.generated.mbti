@@ -8,7 +8,7 @@ import {
 // Values
 pub fn make_app() -> @crescent.App
 
-pub async fn run(port~ : Int) -> Unit
+pub async fn run(port~ : Int32) -> Unit
 
 // Errors
 

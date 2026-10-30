@@ -97,7 +97,7 @@ pub fn HttpResponse::redirect(String) -> Self
 pub fn HttpResponse::redirect_307(String) -> Self
 pub fn HttpResponse::redirect_308(String) -> Self
 pub fn HttpResponse::redirect_temporary(String) -> Self
-pub fn HttpResponse::set_cookie(Self, String, String, max_age? : Int, path? : String, domain? : String, secure? : Bool, http_only? : Bool, same_site? : @cookie.SameSiteOption) -> Unit
+pub fn HttpResponse::set_cookie(Self, String, String, max_age? : Int32, path? : String, domain? : String, secure? : Bool, http_only? : Bool, same_site? : @cookie.SameSiteOption) -> Unit
 pub fn HttpResponse::to_repr(Self) -> @debug.Repr
 pub fn HttpResponse::to_responder(Self) -> &Responder
 pub fn HttpResponse::unauthorized() -> Self
@@ -166,13 +166,13 @@ pub(all) enum StatusCode {
   LoopDetected
   NotExtended
   NetworkAuthenticationRequired
-  Custom(Int)
+  Custom(Int32)
 } derive(Eq, ToJson, @debug.Debug)
 pub fn StatusCode::equal(Self, Self) -> Bool
-pub fn StatusCode::from_int(Int) -> Self
+pub fn StatusCode::from_int(Int32) -> Self
 pub fn StatusCode::not_equal(Self, Self) -> Bool
 pub fn StatusCode::output(Self, &Logger) -> Unit
-pub fn StatusCode::to_int(Self) -> Int
+pub fn StatusCode::to_int(Self) -> Int32
 pub fn StatusCode::to_json(Self) -> Json
 pub fn StatusCode::to_repr(Self) -> @debug.Repr
 pub fn StatusCode::to_string(Self) -> String

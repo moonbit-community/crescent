@@ -6,8 +6,8 @@ fn header_name_matches(left : String, right : String) -> Bool {
   if left.length() != right.length() {
     return false
   }
-  let left_view = left.view()
-  let right_view = right.view()
+  let left_view = left[:]
+  let right_view = right[:]
   for i = 0; i < left.length(); i = i + 1 {
     let l = left_view.unsafe_get(i)
     let r = right_view.unsafe_get(i)

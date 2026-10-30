@@ -1,0 +1,14 @@
+import {
+  "bobzhang/crescent",
+  "bobzhang/crescent/fetch",
+  "moonbitlang/async",
+  "moonbitlang/async/http",
+  "moonbitlang/async/socket",
+  "moonbitlang/async/os_error",
+  "moonbitlang/async/websocket",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/string",
+} for "test"
+
+supported_targets = "native"

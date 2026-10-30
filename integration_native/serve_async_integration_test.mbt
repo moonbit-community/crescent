@@ -24,7 +24,10 @@ async fn allocate_test_server() -> @http.Server {
 }
 
 ///|
-impl ServeStaticProvider for TestStaticProvider with fn get_meta(_, id) {
+impl @crescent.ServeStaticProvider for TestStaticProvider with fn get_meta(
+  _,
+  id,
+) {
   match id {
     "" => Some(StaticAssetMeta(asset_type="text/html; charset=utf-8", size=5L))
     "hello.txt" =>
@@ -34,7 +37,10 @@ impl ServeStaticProvider for TestStaticProvider with fn get_meta(_, id) {
 }
 
 ///|
-impl ServeStaticProvider for TestStaticProvider with fn get_contents(_, id) {
+impl @crescent.ServeStaticProvider for TestStaticProvider with fn get_contents(
+  _,
+  id,
+) {
   match id {
     "" => @crescent.html("index")
     "hello.txt" => @crescent.text("hi")
@@ -43,32 +49,39 @@ impl ServeStaticProvider for TestStaticProvider with fn get_contents(_, id) {
 }
 
 ///|
-impl ServeStaticProvider for TestStaticProvider with fn get_type(_, _ext) -> String? {
+impl @crescent.ServeStaticProvider for TestStaticProvider with fn get_type(
+  _,
+  _ext,
+) -> String? {
   None
 }
 
 ///|
-impl ServeStaticProvider for TestStaticProvider with fn get_encodings(_) -> Map[
-  String,
-  String,
-] {
+impl @crescent.ServeStaticProvider for TestStaticProvider with fn get_encodings(
+  _,
+) -> Map[String, String] {
   {}
 }
 
 ///|
-impl ServeStaticProvider for TestStaticProvider with fn get_index_names(_) -> Array[
-  String,
-] {
+impl @crescent.ServeStaticProvider for TestStaticProvider with fn get_index_names(
+  _,
+) -> Array[String] {
   ["index.html"]
 }
 
 ///|
-impl ServeStaticProvider for TestStaticProvider with fn get_fallthrough(_) -> Bool {
+impl @crescent.ServeStaticProvider for TestStaticProvider with fn get_fallthrough(
+  _,
+) -> Bool {
   false
 }
 
 ///|
-impl ServeStaticProvider for EncodedStaticProvider with fn get_meta(_, id) {
+impl @crescent.ServeStaticProvider for EncodedStaticProvider with fn get_meta(
+  _,
+  id,
+) {
   match id {
     "hello.txt.gz" =>
       Some(
@@ -85,7 +98,10 @@ impl ServeStaticProvider for EncodedStaticProvider with fn get_meta(_, id) {
 }
 
 ///|
-impl ServeStaticProvider for EncodedStaticProvider with fn get_contents(_, id) {
+impl @crescent.ServeStaticProvider for EncodedStaticProvider with fn get_contents(
+  _,
+  id,
+) {
   match id {
     "hello.txt.gz" => @crescent.HttpResponse(status_code=OK).body(b"encoded")
     _ => @crescent.HttpResponse(status_code=NotFound).body("Not Found")
@@ -93,27 +109,31 @@ impl ServeStaticProvider for EncodedStaticProvider with fn get_contents(_, id) {
 }
 
 ///|
-impl ServeStaticProvider for EncodedStaticProvider with fn get_type(_, _ext) -> String? {
+impl @crescent.ServeStaticProvider for EncodedStaticProvider with fn get_type(
+  _,
+  _ext,
+) -> String? {
   None
 }
 
 ///|
-impl ServeStaticProvider for EncodedStaticProvider with fn get_encodings(_) -> Map[
-  String,
-  String,
-] {
+impl @crescent.ServeStaticProvider for EncodedStaticProvider with fn get_encodings(
+  _,
+) -> Map[String, String] {
   { "gzip": ".gz" }
 }
 
 ///|
-impl ServeStaticProvider for EncodedStaticProvider with fn get_index_names(_) -> Array[
-  String,
-] {
+impl @crescent.ServeStaticProvider for EncodedStaticProvider with fn get_index_names(
+  _,
+) -> Array[String] {
   ["index.html"]
 }
 
 ///|
-impl ServeStaticProvider for EncodedStaticProvider with fn get_fallthrough(_) -> Bool {
+impl @crescent.ServeStaticProvider for EncodedStaticProvider with fn get_fallthrough(
+  _,
+) -> Bool {
   false
 }
 

@@ -15,12 +15,8 @@ import {
 }
 
 import {
-  "bobzhang/crescent/fetch",
   "bobzhang/crescent/middleware",
   "bobzhang/crescent/test_client",
-  "moonbitlang/async/os_error",
-  "moonbitlang/async/websocket",
-  "moonbitlang/core/debug",
   "moonbitlang/core/test",
 } for "test"
 
@@ -33,14 +29,3 @@ import {
 supported_targets = "-all+native+wasm"
 
 warnings = "+missing_doc+unnecessary_annotation"
-
-// These integration tests use native process and socket facilities that are not
-// available to the wasm1 test runner.
-
-options(
-  targets: {
-    "fetch_integration_test.mbt": [ "native" ],
-    "serve_async_integration_test.mbt": [ "native" ],
-    "serve_integration_test.mbt": [ "native" ],
-  },
-)
